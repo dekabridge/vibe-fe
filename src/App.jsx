@@ -344,7 +344,7 @@ const handleStartNewEvaluation = (name, color) => {
           </div>
           <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50 rounded-b-xl">
             {activeRightTab === 'proposal' && <ProposalView content={proposalText} />}
-            {activeRightTab === 'data' && <SupportingDataView />}
+            {activeRightTab === 'data' && <FactsView />}
             {activeRightTab === 'nextSteps' && <NextStepsView steps={nextSteps} onUpdate={onUpdateNextStep} onDelete={onDeleteNextStep} onAdd={onAddNewStep} highlightedStepId={highlightedNextStepId} />}
           </div>
         </div>
@@ -515,13 +515,62 @@ const ProposalView = ({ content }) => (
   </div>
 );
 
-const SupportingDataView = () => (
-  <div className="p-6 space-y-6">
-    <DataSection title="Salesforce" icon={Building} data={supportingData.salesforce} renderItem={SalesforceItem} />
-    <DataSection title="Zendesk" icon={Ticket} data={supportingData.zendesk} renderItem={ZendeskItem} />
-    <DataSection title="Jira" icon={Bug} data={supportingData.jira} renderItem={JiraItem} />
-  </div>
-);
+const FactsView = () => {
+    const [facts, setFacts] = useState([
+        { id: 1, fact: "Opportunity 'Project Titan' is currently in the Proposal/Price Quote stage.", source: 'Salesforce', reference: 'Project Titan', link: '#' },
+        { id: 2, fact: "Support ticket #86753 regarding the Enterprise Plan is still open.", source: 'Zendesk', reference: '#86753', link: '#' },
+        { id: 3, fact: "The 'Develop new dashboard module' story is currently In Progress.", source: 'Jira', reference: 'PROJ-123', link: '#' },
+        { id: 4, fact: "Account 'Global Tech Inc.' has an annual revenue of $15M.", source: 'Salesforce', reference: 'Global Tech Inc.', link: '#' },
+    ]);
+
+    const getSourceLogo = (source) => {
+        switch (source) {
+            case 'Salesforce':
+                return 'https://cdn.worldvectorlogo.com/logos/salesforce-2.svg';
+            case 'Zendesk':
+                return 'https://cdn.worldvectorlogo.com/logos/zendesk.svg';
+            case 'Jira':
+                return 'https://cdn.worldvectorlogo.com/logos/jira-1.svg';
+            default:
+                return '';
+        }
+    };
+
+    return (
+        <div className="space-y-4">
+            <h3 className="text-xl font-bold text-[#003E7C]">Relevant Facts</h3>
+            <div className="bg-white rounded-xl border border-gray-200/80">
+                <table className="w-full text-left">
+                    <thead className="border-b border-gray-200/80">
+                        <tr>
+                            <th className="p-4 text-sm font-semibold text-gray-500 w-3/5">Fact</th>
+                            <th className="p-4 text-sm font-semibold text-gray-500">Source</th>
+                            <th className="p-4 text-sm font-semibold text-gray-500">Reference</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {facts.map(fact => (
+                            <tr key={fact.id} className="border-b border-gray-200/80 last:border-b-0">
+                                <td className="p-4 text-gray-800 font-medium text-sm">{fact.fact}</td>
+                                <td className="p-4 text-gray-600 text-sm">
+                                    <div className="flex items-center gap-2">
+                                        <img src={getSourceLogo(fact.source)} alt={`${fact.source} logo`} className="h-4 w-4 object-contain" />
+                                        <span>{fact.source}</span>
+                                    </div>
+                                </td>
+                                <td className="p-4 text-sm">
+                                    <a href={fact.link} target="_blank" rel="noopener noreferrer" className="text-[#0063C6] hover:underline">
+                                        {fact.reference}
+                                    </a>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+};
 
 const DataSection = ({ title, icon: Icon, data, renderItem: RenderItem }) => {
   const [isOpen, setIsOpen] = useState(true);
