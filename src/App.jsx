@@ -851,12 +851,9 @@ const ResumeCard = ({ evaluation, projectName, onAssign, onDelete, onSelect, onU
                     <button onClick={(e) => { e.stopPropagation(); onSelect('proposal'); }} className="flex items-center gap-1.5 text-[#0063C6] hover:underline">
                         <FileText size={14} /> Proposal
                     </button>
-                    <span className="flex items-center gap-1.5">
-                        <Users size={14} className="text-gray-400" /> Simulations: {evaluation.simulations}
-                    </span>
                 </div>
             </div>
-            <div className="w-full sm:w-auto border-t sm:border-t-0 sm:border-l border-gray-200 mt-4 sm:mt-0 pt-4 sm:pt-0 sm:pl-4 sm:ml-4 flex-shrink-0 flex items-center gap-2">
+            <div className="w-full sm:w-72 border-t sm:border-t-0 sm:border-l border-gray-200 mt-4 sm:mt-0 pt-4 sm:pt-0 sm:pl-4 sm:ml-4 flex-shrink-0 flex items-center gap-2">
                 {onAssign && onDelete ? (
                     <>
                         <button onClick={onAssign} title="Add to Project" className="p-2 text-gray-500 hover:text-[#0063C6] hover:bg-gray-100 rounded-md">
