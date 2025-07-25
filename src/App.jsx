@@ -577,8 +577,28 @@ const PersonaButton = ({ name, onSelect, isSelected, disabled }) => (
   </button>
 );
 
-const NextStepsView = ({ steps, onUpdate, onDelete, onAdd }) => {
+const NextStepsView = ({ steps, onUpdate, onDelete, onAdd, highlightedStepId }) => {
     const statusOptions = ['Not Started', 'In Progress', 'Completed'];
+    const highlightedRef = useRef(null);
+
+    useEffect(() => {
+        if (highlightedRef.current) {
+            highlightedRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, [highlightedStepId]);
+
+    const getStatusClasses = (status) => {
+        switch (status) {
+            case 'Not Started':
+                return 'bg-yellow-100 text-yellow-800 focus:ring-yellow-500';
+            case 'In Progress':
+                return 'bg-blue-100 text-blue-800 focus:ring-blue-500';
+            case 'Completed':
+                return 'bg-green-100 text-green-800 focus:ring-green-500';
+            default:
+                return 'bg-gray-100 text-gray-800 focus:ring-gray-500';
+        }
+    };
 
     return (
         <div className="space-y-4">
@@ -598,7 +618,11 @@ const NextStepsView = ({ steps, onUpdate, onDelete, onAdd }) => {
                     </thead>
                     <tbody>
                         {steps.map(step => (
-                            <tr key={step.id} className="border-b border-gray-200/80 last:border-b-0">
+                            <tr 
+                                key={step.id} 
+                                ref={step.id === highlightedStepId ? highlightedRef : null}
+                                className={`border-b border-gray-200/80 last:border-b-0 transition-colors duration-1000 ${step.id === highlightedStepId ? 'bg-blue-100' : ''}`}
+                            >
                                 <td className="p-2 align-top">
                                     <AutosizeTextarea 
                                         value={step.action}
@@ -619,7 +643,7 @@ const NextStepsView = ({ steps, onUpdate, onDelete, onAdd }) => {
                                     <select 
                                         value={step.status} 
                                         onChange={(e) => onUpdate(step.id, 'status', e.target.value)}
-                                        className="w-full bg-transparent p-2 border border-transparent rounded-md focus:bg-white focus:border-gray-300 focus:outline-none text-xs"
+                                        className={`w-full font-semibold p-2 border border-transparent rounded-md focus:outline-none text-xs appearance-none ${getStatusClasses(step.status)}`}
                                     >
                                         {statusOptions.map(option => <option key={option} value={option}>{option}</option>)}
                                     </select>
