@@ -246,6 +246,9 @@ const renderActiveView = () => {
     if (activeLeftNav === 'Settings') {
         return <SettingsPage userName={userName} onUserNameChange={setUserName} initialTab={settingsInitialTab} />;
     }
+    if (activeLeftNav === 'About') {
+        return <AboutPage />;
+    }
     return <div className="p-8"><h1 className="text-4xl font-bold text-[#003E7C]">{activeLeftNav}</h1><p className="text-gray-500 mt-2">This page is under construction.</p></div>;
   };
 
@@ -343,7 +346,7 @@ const renderActiveView = () => {
 
 const LeftSidebar = ({ activeItem, setActiveItem, isExpanded, setIsExpanded, setActiveEvaluationId }) => (
   <nav className={`bg-[#001931] flex flex-col py-8 gap-6 transition-all duration-300 ${isExpanded ? 'w-56' : 'w-20 items-center'}`}>
-    <div className={`text-white font-bold text-2xl h-8 flex items-center ${isExpanded ? 'px-6' : 'px-0 justify-center'}`}>DB</div>
+    <button onClick={() => { setActiveItem('About'); setActiveEvaluationId(null); }} className={`text-white font-bold text-2xl h-8 flex items-center ${isExpanded ? 'px-6' : 'px-0 justify-center w-full'}`}>DB</button>
     <div className={`flex flex-col gap-2 mt-10 w-full ${isExpanded ? 'px-4' : 'items-center'}`}>
       <SidebarButton name="Welcome" icon={Home} activeItem={activeItem} onClick={() => { setActiveItem('Welcome'); setActiveEvaluationId(null); }} isExpanded={isExpanded} />
       <SidebarButton name="Evaluations" icon={ClipboardList} activeItem={activeItem} onClick={() => { setActiveItem('Evaluations'); setActiveEvaluationId(null); }} isExpanded={isExpanded} />
@@ -884,7 +887,27 @@ const ImpactPage = () => (
       </div>
     </div>
 );
+const AboutPage = () => (
+    <div className="flex-grow flex items-center justify-center">
+        <div className="text-center p-8 bg-white rounded-xl border border-gray-200/80 shadow-sm">
+            <h2 className="text-3xl font-bold text-[#001931]">DekaBridge</h2>
+            <p className="text-gray-500 mt-1">Version 1.0.0</p>
+            
+            <div className="my-6 border-t border-gray-200"></div>
 
+            <p className="text-sm text-gray-600">
+                &copy; 2025 DekaBridge, Inc. All rights reserved.
+            </p>
+            <a href="https://www.dekabridge.com/" target="_blank" rel="noopener noreferrer" className="text-sm text-[#0063C6] hover:underline mt-1 block">
+                https://www.dekabridge.com/
+            </a>
+
+            <div className="mt-6 bg-blue-50 text-blue-800 font-semibold px-4 py-2 rounded-lg inline-block">
+                Designed in the mountains, built by the bay.
+            </div>
+        </div>
+    </div>
+);
 const ProjectsPage = ({ projects, allEvaluations, onUpdateProjectName, onCreateNewProject, onSelectEvaluation }) => {
     const [newProjectName, setNewProjectName] = useState('');
     const [expandedProjects, setExpandedProjects] = useState(projects.map(p => p.id));
