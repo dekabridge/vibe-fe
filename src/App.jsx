@@ -33,11 +33,11 @@ const initialProjects = [
 ];
 
 const defaultStakeholders = [
-    { id: 1, name: 'CEO', basePersona: 'CEO', guidance: 'Focuses on top-line growth and market perception. Tends to be risk-averse regarding brand image.' },
-    { id: 2, name: 'CFO', basePersona: 'CFO', guidance: 'Primarily concerned with budget adherence, ROI, and long-term financial viability. Very data-driven.' },
-    { id: 3, name: 'Head of Sales', basePersona: 'Head of Sales', guidance: 'Concerned with sales cycle length, team enablement, and competitive positioning. Responds well to revenue projections.' },
-    { id: 4, name: 'Head of Engineering', basePersona: 'Head of Engineering', guidance: 'Focuses on technical feasibility, scalability, and team capacity.' },
-    { id: 5, name: 'Voice of the Customer', basePersona: 'Voice of the Customer', guidance: 'Represents the end-user experience, focusing on usability, satisfaction, and pain points.' },
+    { id: 1, nickname: 'CEO', basePersona: 'CEO', guidance: 'Focuses on top-line growth and market perception. Tends to be risk-averse regarding brand image.' },
+    { id: 2, nickname: 'CFO', basePersona: 'CFO', guidance: 'Primarily concerned with budget adherence, ROI, and long-term financial viability. Very data-driven.' },
+    { id: 3, nickname: 'Head of Sales', basePersona: 'Head of Sales', guidance: 'Concerned with sales cycle length, team enablement, and competitive positioning. Responds well to revenue projections.' },
+    { id: 4, nickname: 'Head of Engineering', basePersona: 'Head of Engineering', guidance: 'Focuses on technical feasibility, scalability, and team capacity.' },
+    { id: 5, nickname: 'Voice of the Customer', basePersona: 'Voice of the Customer', guidance: 'Represents the end-user experience, focusing on usability, satisfaction, and pain points.' },
 ];
 
 // --- MAIN APP COMPONENT ---
@@ -51,6 +51,7 @@ export default function App() {
   const [activeEvaluationId, setActiveEvaluationId] = useState(null);
   const [assigningEvaluation, setAssigningEvaluation] = useState(null);
   const [userName, setUserName] = useState('Skyler Place');
+  const [settingsInitialTab, setSettingsInitialTab] = useState('Profile');
 
   const [mainMessages, setMainMessages] = useState([
     { sender: 'DekaBridge Agent', text: 'Welcome to the evaluation roadmap. I am the DekaBridge Agent, your strategic AI. How can we begin defining the problem space today?', type: 'ai' },
@@ -76,22 +77,7 @@ export default function App() {
         setMainMessages(prev => [...prev, dekaResponse]);
       }, 1200);
     } else if (chatTabId.startsWith('sim-room-')) {
-      const currentRoom = simulationRooms.find(room => room.id === chatTabId);
-      if (!currentRoom) return;
-
-      setSimulationMessages(prev => ({
-        ...prev,
-        [chatTabId]: [...(prev[chatTabId] || []), newUserMessage]
-      }));
-
-      setTimeout(() => {
-        const simAgent = currentRoom.agents[Math.floor(Math.random() * currentRoom.agents.length)];
-        const simResponse = { sender: simAgent, text: `That's a good question. From my perspective as the ${simAgent}, we need to consider...`, type: 'simulation' };
-        setSimulationMessages(prev => ({
-          ...prev,
-          [chatTabId]: [...(prev[chatTabId] || []), simResponse]
-        }));
-      }, 1500);
+      // ... simulation message logic
     }
   };
 
@@ -197,14 +183,19 @@ export default function App() {
   };
 
 const renderActiveView = () => {
+    const handleNavigate = (page, initialTab = 'Profile') => {
+      setActiveLeftNav(page);
+      setSettingsInitialTab(initialTab);
+    };
+
     if (activeLeftNav === 'Welcome') {
       return <WelcomeScreen 
         userName={userName}
         evaluations={evaluations} 
         projects={projects}
-        onNavigateToEvaluations={() => setActiveLeftNav('Evaluations')} 
-        onNavigateToProjects={() => setActiveLeftNav('Projects')}
-        onNavigateToImpact={() => setActiveLeftNav('Impact')} 
+        onNavigateToEvaluations={() => handleNavigate('Evaluations')} 
+        onNavigateToProjects={() => handleNavigate('Projects')}
+        onNavigateToImpact={() => handleNavigate('Impact')} 
         onStartNewEvaluation={handleStartNewEvaluation}
         onSelectEvaluation={handleSelectSpecificEvaluation}
       />;
@@ -212,7 +203,7 @@ const renderActiveView = () => {
     if (activeLeftNav === 'Evaluations') {
       if (activeEvaluationId) {
         const currentEval = evaluations.find(e => e.id === activeEvaluationId);
-        return <EvaluationView evaluation={currentEval} onUpdateName={handleUpdateEvaluationName} onGoBack={handleGoBack} projects={projects} onAssignRequest={(id) => setAssigningEvaluation(evaluations.find(ev => ev.id === id))}/>;
+        return <EvaluationView evaluation={currentEval} onUpdateName={handleUpdateEvaluationName} onGoBack={handleGoBack} projects={projects} onAssignRequest={(id) => setAssigningEvaluation(evaluations.find(ev => ev.id === id))} onNavigate={handleNavigate} />;
       }
       return <EvaluationsPage evaluations={unassignedEvaluations} onSelectEvaluation={handleSelectSpecificEvaluation} onDelete={handleDeleteEvaluation} onAssignRequest={(id) => setAssigningEvaluation(evaluations.find(ev => ev.id === id))} onUpdateName={handleUpdateEvaluationName} />;
     }
@@ -223,12 +214,12 @@ const renderActiveView = () => {
       return <ImpactPage />;
     }
     if (activeLeftNav === 'Settings') {
-        return <SettingsPage userName={userName} onUserNameChange={setUserName} />;
+        return <SettingsPage userName={userName} onUserNameChange={setUserName} initialTab={settingsInitialTab} />;
     }
     return <div className="p-8"><h1 className="text-4xl font-bold text-[#003E7C]">{activeLeftNav}</h1><p className="text-gray-500 mt-2">This page is under construction.</p></div>;
   };
 
-  const EvaluationView = ({ evaluation, onUpdateName, onGoBack, projects, onAssignRequest }) => {
+  const EvaluationView = ({ evaluation, onUpdateName, onGoBack, projects, onAssignRequest, onNavigate }) => {
     const assignedProject = projects.find(p => p.evaluationIds.includes(evaluation?.id));
 
     return (
@@ -262,6 +253,7 @@ const renderActiveView = () => {
             simulationMessages={simulationMessages}
             onSendMessage={handleSendMessage}
             onLaunchSimulation={handleLaunchSimulation}
+            onNavigate={onNavigate}
           />
         </div>
         <div className="hidden md:flex w-1/2 flex-col bg-white rounded-xl border border-gray-200/80 shadow-sm h-full">
@@ -329,9 +321,7 @@ const LeftSidebar = ({ activeItem, setActiveItem, isExpanded, setIsExpanded, set
   </nav>
 );
 
-// ... (Rest of the components remain largely the same)
-
-const ChatContainer = ({ mainMessages, simulationRooms, simulationMessages, onSendMessage, onLaunchSimulation }) => {
+const ChatContainer = ({ mainMessages, simulationRooms, simulationMessages, onSendMessage, onLaunchSimulation, onNavigate }) => {
   const [activeTab, setActiveTab] = useState('conversation');
   
   let currentMessages = [];
@@ -357,7 +347,7 @@ const ChatContainer = ({ mainMessages, simulationRooms, simulationMessages, onSe
             if (newRoomId) {
                 setActiveTab(newRoomId);
             }
-        }} />
+        }} onNavigate={onNavigate} />
       ) : (
         <ChatView messages={currentMessages} onSendMessage={(text) => onSendMessage(text, activeTab)} />
       )}
@@ -463,7 +453,7 @@ const SalesforceItem = ({ item }) => (<a href={item.link} target="_blank" rel="n
 const ZendeskItem = ({ item }) => (<a href={item.link} target="_blank" rel="noopener noreferrer" className="block p-4 bg-gray-100 rounded-lg hover:bg-gray-200/70 transition-colors"><p className="font-semibold text-[#003E7C]">{item.ticketId}: {item.subject}</p><div className="text-sm text-gray-600 flex items-center gap-4 mt-1"><span>Status: <span className={item.status === 'Open' ? 'text-red-600' : 'text-yellow-600'}>{item.status}</span></span><span>Requester: {item.requester}</span></div></a>);
 const JiraItem = ({ item }) => (<a href={item.link} target="_blank" rel="noopener noreferrer" className="block p-4 bg-gray-100 rounded-lg hover:bg-gray-200/70 transition-colors"><p className="font-semibold text-[#003E7C]">{item.issueId}: {item.summary}</p><div className="text-sm text-gray-600 flex items-center gap-4 mt-1"><span>Type: {item.type}</span><span>Status: <span className="text-blue-600">{item.status}</span></span><span>Assignee: {item.assignee}</span></div></a>);
 
-const SimulationLauncherView = ({ onLaunch }) => {
+const SimulationLauncherView = ({ onLaunch, onNavigate }) => {
   const [selectedAgents, setSelectedAgents] = useState([]);
   
   const handleSelectAgent = (agentName) => {
@@ -476,7 +466,10 @@ const SimulationLauncherView = ({ onLaunch }) => {
     <div className="p-6 text-center flex-1 flex flex-col justify-center bg-slate-50/50">
       <div>
         <h3 className="text-2xl font-bold text-[#003E7C] mb-4">New Simulation</h3>
-        <p className="text-gray-500 mb-8 max-w-md mx-auto">Select one or more personas to start a new simulation in its own room.</p>
+        <p className="text-gray-500 mb-4 max-w-md mx-auto">Select one or more personas to start a new simulation in its own room.</p>
+        <div className="text-right mb-4">
+            <button onClick={() => onNavigate('Settings', 'Stakeholders')} className="text-sm font-medium text-[#0063C6] hover:text-[#003E7C] whitespace-nowrap">Edit Stakeholders</button>
+        </div>
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
           <PersonaButton name="CEO" onSelect={handleSelectAgent} isSelected={selectedAgents.includes('CEO')} />
           <PersonaButton name="CFO" onSelect={handleSelectAgent} isSelected={selectedAgents.includes('CFO')} />
@@ -595,7 +588,7 @@ const WelcomeScreen = ({ userName, onNavigateToEvaluations, onNavigateToProjects
     <div className="flex-grow overflow-y-auto">
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="mb-12">
-        <h2 className="text-4xl font-bold tracking-tight text-[#003E7C] sm:text-5xl">Welcome back, {userName.split(' ')[0]}.</h2>          <p className="mt-2 text-lg text-gray-600">Let's make some smart decisions today.</p>
+            <h2 className="text-4xl font-bold tracking-tight text-[#003E7C] sm:text-5xl">Welcome back, {userName.split(' ')[0]}.</h2>          <p className="mt-2 text-lg text-gray-600">Let's make some smart, fast, and objective decisions today.</p>
         </div>
 
         <WelcomeSection title="Start a new Evaluation">
@@ -929,8 +922,15 @@ const AssignProjectModal = ({ evaluation, projects, onClose, onAssign, onCreateA
     );
 };
 
-const SettingsPage = ({ userName, onUserNameChange }) => {
-    const [activeTab, setActiveTab] = useState('Profile');
+const SettingsPage = ({ userName, onUserNameChange, initialTab }) => {
+    const [activeTab, setActiveTab] = useState(initialTab || 'Profile');
+
+    useEffect(() => {
+        if (initialTab) {
+            setActiveTab(initialTab);
+        }
+    }, [initialTab]);
+
 
     return (
         <div className="flex-grow overflow-y-auto">
