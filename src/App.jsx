@@ -60,6 +60,8 @@ export default function App() {
   const [mainMessages, setMainMessages] = useState([
     { sender: 'DekaBridge Agent', text: 'Welcome to the evaluation roadmap. I am the DekaBridge Agent, your strategic AI. How can we begin defining the problem space today?', type: 'ai' },
     { sender: 'Decision Coach', text: 'Cognitive fallacy detected, Decision Coach will help you determine alternative options.', type: 'ai' },
+    { sender: 'You', text: 'I need help figuring out how to fit more things into my roadmap', type: 'user' },
+
   ]);
   
   const [simulationRooms, setSimulationRooms] = useState([]);
@@ -110,7 +112,7 @@ export default function App() {
     return null;
   };
 
-const handleStartNewEvaluation = (name, color) => {
+  const handleStartNewEvaluation = (name, color) => {
     const newEvaluation = {
       id: Date.now(),
       name: `New Evaluation: ${name}`,
@@ -239,6 +241,7 @@ const handleStartNewEvaluation = (name, color) => {
       if (activeEvaluationId) {
         const currentEval = evaluations.find(e => e.id === activeEvaluationId);
         return <EvaluationView 
+                    userName={userName}
                     evaluation={currentEval} 
                     onUpdateName={handleUpdateEvaluationName} 
                     onGoBack={handleGoBack} 
@@ -278,6 +281,7 @@ const handleStartNewEvaluation = (name, color) => {
   };
 
   const EvaluationView = ({ 
+    userName,
     evaluation, 
     onUpdateName, 
     onGoBack, 
@@ -328,6 +332,7 @@ const handleStartNewEvaluation = (name, color) => {
       <div className="flex-1 flex gap-8 overflow-hidden">
         <div className="w-full md:w-1/2 flex flex-col h-full">
           <ChatContainer 
+            userName={userName}
             mainMessages={mainMessages}
             simulationRooms={simulationRooms}
             simulationMessages={simulationMessages}
@@ -408,7 +413,7 @@ const LeftSidebar = ({ activeItem, setActiveItem, isExpanded, setIsExpanded, set
   </nav>
 );
 
-const ChatContainer = ({ mainMessages, simulationRooms, simulationMessages, onSendMessage, onLaunchSimulation, onNavigate }) => {
+const ChatContainer = ({ userName, mainMessages, simulationRooms, simulationMessages, onSendMessage, onLaunchSimulation, onNavigate }) => {
   const [activeTab, setActiveTab] = useState('conversation');
   
   let currentMessages = [];
@@ -436,7 +441,7 @@ const ChatContainer = ({ mainMessages, simulationRooms, simulationMessages, onSe
             }
         }} onNavigate={onNavigate} />
       ) : (
-        <ChatView messages={currentMessages} onSendMessage={(text) => onSendMessage(text, activeTab)} />
+        <ChatView userName={userName} messages={currentMessages} onSendMessage={(text) => onSendMessage(text, activeTab)} />
       )}
     </div>
   );
@@ -449,7 +454,7 @@ const ChatTabButton = ({ name, id, activeTab, onClick, icon: Icon }) => (
   </button>
 );
 
-const ChatView = ({ messages, onSendMessage }) => {
+const ChatView = ({ userName, messages, onSendMessage }) => {
   const [input, setInput] = useState('');
   const chatEndRef = useRef(null);
 
@@ -461,24 +466,24 @@ const ChatView = ({ messages, onSendMessage }) => {
   };
 
   const getAgentIcon = (sender) => {
-    if (sender === 'DekaBridge Agent') return <Bot className="w-6 h-6 text-[#0063C6]" />;
-    if (sender === 'Decision Coach') return <Cpu className="w-6 h-6 text-purple-600" />;
-    if (sender === 'You') return <User className="w-6 h-6 text-white" />;
-    if (sender === 'System') return <Settings className="w-6 h-6 text-gray-500" />;
-    return <Briefcase className="w-6 h-6 text-yellow-800" />;
+    if (sender === 'DekaBridge Agent') return <Bot className="w-5 h-5 text-[#0063C6]" />;
+    if (sender === 'Decision Coach') return <Cpu className="w-5 h-5 text-purple-600" />;
+    if (sender === 'You') return <User className="w-5 h-5 text-white" />;
+    if (sender === 'System') return <Settings className="w-5 h-5 text-gray-500" />;
+    return <Briefcase className="w-5 h-5 text-yellow-800" />;
   };
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 p-6 overflow-y-auto space-y-6 bg-slate-50/50">
+      <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-slate-50/50">
         {messages.map((msg, index) => (
           <div key={index} className={`flex items-start gap-3 ${msg.type === 'user' ? 'justify-end' : ''}`}>
-            {msg.type !== 'user' && <div className="w-10 h-10 flex-shrink-0 rounded-full bg-gray-200 flex items-center justify-center">{getAgentIcon(msg.sender)}</div>}
-            <div className={`max-w-lg p-4 rounded-xl ${msg.type === 'user' ? 'bg-[#0063C6] text-white' : 'bg-[#E8EDF2] text-[#001931]'}`}>
-              <p className="font-bold text-sm mb-1">{msg.sender}</p>
+            {msg.type !== 'user' && <div className="w-8 h-8 flex-shrink-0 rounded-full bg-gray-200 flex items-center justify-center">{getAgentIcon(msg.sender)}</div>}
+            <div className={`max-w-md p-3 rounded-xl ${msg.type === 'user' ? 'bg-[#0063C6] text-white' : 'bg-[#E8EDF2] text-[#001931]'}`}>
+              <p className="font-semibold text-xs mb-1">{msg.sender === 'You' ? userName.split(' ')[0] : msg.sender}</p>
               <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.text}</p>
             </div>
-            {msg.type === 'user' && <div className="w-10 h-10 flex-shrink-0 rounded-full bg-[#0063C6] flex items-center justify-center">{getAgentIcon(msg.sender)}</div>}
+            {msg.type === 'user' && <div className="w-8 h-8 flex-shrink-0 rounded-full bg-[#0063C6] flex items-center justify-center">{getAgentIcon(msg.sender)}</div>}
           </div>
         ))}
         <div ref={chatEndRef} />
