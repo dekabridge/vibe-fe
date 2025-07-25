@@ -16,15 +16,17 @@ const supportingData = {
 };
 
 const initialNextSteps = [
-    { id: 1, action: 'Finalize budget with CFO', owner: 'You', due: '2024-08-15', status: 'Not Started' },
-    { id: 2, action: 'Draft legal agreements for Berlin hub', owner: 'Legal Team', due: '2024-09-01', status: 'Not Started' },
-    { id: 3, action: 'Begin localization vendor selection', owner: 'Product Team', due: '2024-09-05', status: 'Not Started' },
+    { id: 1, evaluationId: 1, action: 'Finalize budget with CFO', owner: 'You', due: '2025-08-15', status: 'Not Started' },
+    { id: 2, evaluationId: 1, action: 'Draft legal agreements for Berlin hub', owner: 'Legal Team', due: '2025-09-01', status: 'Not Started' },
+    { id: 3, evaluationId: 3, action: 'Begin localization vendor selection', owner: 'Product Team', due: '2025-09-05', status: 'Not Started' },
+    { id: 4, evaluationId: 2, action: 'Gather more customer information', owner: 'Product Team', due: '2025-07-26', status: 'Not Started' },
+    { id: 5, evaluationId: 1, action: 'Schedule stakeholder meetings', owner: 'You', due: '2025-07-28', status: 'In Progress' },
 ];
 
 const initialEvaluations = [
-    { id: 1, name: 'Q4 2025 Product Strategy', type: 'Roadmap Planning', lastUpdated: '3 hours ago', simulations: 2, nextStep: { action: 'Schedule meetings with stakeholders.', owner: 'You', due: '2024-07-28' }, color: 'blue' },
-    { id: 2, name: 'AI Agent Framework Evaluation', type: 'Spike in the Roadmap', lastUpdated: 'Yesterday', simulations: 0, nextStep: { action: 'Gather more customer information.', owner: 'Product Team', due: '2024-07-26' }, color: 'indigo' },
-    { id: 3, name: 'New Pricing Model Analysis', type: 'Pricing Exercise', lastUpdated: '2 days ago', simulations: 1, nextStep: { action: 'Analyze competitor pricing tiers.', owner: 'Marketing', due: '2024-07-30' }, color: 'amber' },
+    { id: 1, name: 'Q4 2025 Product Strategy', type: 'Roadmap Planning', lastUpdated: '3 hours ago', simulations: 2, color: 'blue' },
+    { id: 2, name: 'AI Agent Framework Evaluation', type: 'Spike in the Roadmap', lastUpdated: 'Yesterday', simulations: 0, color: 'indigo' },
+    { id: 3, name: 'New Pricing Model Analysis', type: 'Pricing Exercise', lastUpdated: '2 days ago', simulations: 1, color: 'amber' },
 ];
 
 const initialProjects = [
@@ -53,6 +55,7 @@ export default function App() {
   const [showAddStepModal, setShowAddStepModal] = useState(false);
   const [userName, setUserName] = useState('Skyler Place');
   const [settingsInitialTab, setSettingsInitialTab] = useState('Profile');
+  const [highlightedNextStepId, setHighlightedNextStepId] = useState(null);
 
   const [mainMessages, setMainMessages] = useState([
     { sender: 'DekaBridge Agent', text: 'Welcome to the evaluation roadmap. I am the DekaBridge Agent, your strategic AI. How can we begin defining the problem space today?', type: 'ai' },
@@ -82,13 +85,14 @@ export default function App() {
     }
   };
 
-  const handleLaunchSimulation = (selectedAgents) => {
+  const handleLaunchSimulation = (selectedAgents, evaluationId) => {
     if (selectedAgents.length > 0) {
       const newRoomId = `sim-room-${simulationRooms.length + 1}`;
       const newRoom = {
         id: newRoomId,
         name: `Room ${simulationRooms.length + 1}`,
         agents: selectedAgents,
+        evaluationId: evaluationId,
       };
       setSimulationRooms(prev => [...prev, newRoom]);
 
@@ -113,7 +117,6 @@ export default function App() {
       type: 'Roadmap Planning',
       lastUpdated: 'Just now',
       simulations: 0,
-      nextStep: { action: 'Define initial problem statement.', owner: 'You', due: '2025-01-01' },
       color: 'blue'
     };
     setEvaluations(prev => [newEvaluation, ...prev]);
@@ -121,8 +124,9 @@ export default function App() {
     setActiveEvaluationId(newEvaluation.id);
   };
   
-const handleSelectSpecificEvaluation = (id, initialTab = 'proposal') => {
+  const handleSelectSpecificEvaluation = (id, initialTab = 'proposal', nextStepId = null) => {
     setActiveRightTab(initialTab);
+    setHighlightedNextStepId(nextStepId);
     setActiveEvaluationId(id);
     setActiveLeftNav('Evaluations');
   }
@@ -134,17 +138,14 @@ const handleSelectSpecificEvaluation = (id, initialTab = 'proposal') => {
     }
   };
   
-const handleAssignToProject = (evaluationId, newProjectId) => {
+  const handleAssignToProject = (evaluationId, projectId) => {
     setProjects(prevProjects => {
-        // First, remove the evaluation from any project it might already be in.
         const projectsWithoutEval = prevProjects.map(p => ({
             ...p,
             evaluationIds: p.evaluationIds.filter(id => id !== evaluationId)
         }));
-
-        // Now, add the evaluation to the new project.
         return projectsWithoutEval.map(p =>
-            p.id === newProjectId
+            p.id === projectId
             ? { ...p, evaluationIds: [...p.evaluationIds, evaluationId] }
             : p
         );
@@ -178,7 +179,8 @@ const handleAssignToProject = (evaluationId, newProjectId) => {
     const newProject = { id: Date.now(), name, evaluationIds: [] };
     setProjects(prev => [...prev, newProject]);
   };
-const handleUpdateNextStep = (id, field, value) => {
+
+  const handleUpdateNextStep = (id, field, value) => {
     setNextSteps(prevSteps =>
       prevSteps.map(step =>
         step.id === id ? { ...step, [field]: value } : step
@@ -190,14 +192,16 @@ const handleUpdateNextStep = (id, field, value) => {
     setNextSteps(prevSteps => prevSteps.filter(step => step.id !== id));
   };
 
-const handleAddNewStep = (newStepData) => {
+  const handleAddNewStep = (newStepData) => {
     const newStep = {
       id: Date.now(),
+      evaluationId: activeEvaluationId,
       ...newStepData
     };
     setNextSteps(prevSteps => [...prevSteps, newStep]);
     setShowAddStepModal(false);
   };
+
   const unassignedEvaluations = evaluations.filter(ev => 
     !projects.some(p => p.evaluationIds.includes(ev.id))
   );
@@ -212,7 +216,7 @@ const handleAddNewStep = (newStepData) => {
     setActiveEvaluationId(null);
   };
 
-const renderActiveView = () => {
+  const renderActiveView = () => {
     const handleNavigate = (page, initialTab = 'Profile') => {
       setActiveLeftNav(page);
       setSettingsInitialTab(initialTab);
@@ -223,6 +227,7 @@ const renderActiveView = () => {
         userName={userName}
         evaluations={evaluations} 
         projects={projects}
+        nextSteps={nextSteps}
         onNavigateToEvaluations={() => handleNavigate('Evaluations')} 
         onNavigateToProjects={() => handleNavigate('Projects')}
         onNavigateToImpact={() => handleNavigate('Impact')} 
@@ -233,12 +238,32 @@ const renderActiveView = () => {
     if (activeLeftNav === 'Evaluations') {
       if (activeEvaluationId) {
         const currentEval = evaluations.find(e => e.id === activeEvaluationId);
-        return <EvaluationView evaluation={currentEval} onUpdateName={handleUpdateEvaluationName} onGoBack={handleGoBack} projects={projects} onAssignRequest={(id) => setAssigningEvaluation(evaluations.find(ev => ev.id === id))} onNavigate={handleNavigate} />;
+        return <EvaluationView 
+                    evaluation={currentEval} 
+                    onUpdateName={handleUpdateEvaluationName} 
+                    onGoBack={handleGoBack} 
+                    projects={projects} 
+                    onAssignRequest={(id) => setAssigningEvaluation(evaluations.find(ev => ev.id === id))} 
+                    onNavigate={handleNavigate}
+                    mainMessages={mainMessages}
+                    simulationRooms={simulationRooms.filter(r => r.evaluationId === activeEvaluationId)}
+                    simulationMessages={simulationMessages}
+                    onSendMessage={handleSendMessage}
+                    onLaunchSimulation={(agents) => handleLaunchSimulation(agents, activeEvaluationId)}
+                    activeRightTab={activeRightTab}
+                    setActiveRightTab={setActiveRightTab}
+                    proposalText={proposalText}
+                    nextSteps={nextSteps.filter(s => s.evaluationId === activeEvaluationId)}
+                    onUpdateNextStep={handleUpdateNextStep}
+                    onDeleteNextStep={handleDeleteNextStep}
+                    onAddNewStep={() => setShowAddStepModal(true)}
+                    highlightedNextStepId={highlightedNextStepId}
+                />;
       }
-      return <EvaluationsPage evaluations={unassignedEvaluations} onSelectEvaluation={handleSelectSpecificEvaluation} onDelete={handleDeleteEvaluation} onAssignRequest={(id) => setAssigningEvaluation(evaluations.find(ev => ev.id === id))} onUpdateName={handleUpdateEvaluationName} />;
+      return <EvaluationsPage evaluations={unassignedEvaluations} nextSteps={nextSteps} onSelectEvaluation={handleSelectSpecificEvaluation} onDelete={handleDeleteEvaluation} onAssignRequest={(id) => setAssigningEvaluation(evaluations.find(ev => ev.id === id))} onUpdateName={handleUpdateEvaluationName} />;
     }
     if (activeLeftNav === 'Projects') {
-        return <ProjectsPage projects={projects} allEvaluations={evaluations} onUpdateProjectName={handleUpdateProjectName} onCreateNewProject={handleCreateNewProject} onSelectEvaluation={handleSelectSpecificEvaluation}/>
+        return <ProjectsPage projects={projects} allEvaluations={evaluations} nextSteps={nextSteps} onUpdateProjectName={handleUpdateProjectName} onCreateNewProject={handleCreateNewProject} onSelectEvaluation={handleSelectSpecificEvaluation}/>
     }
     if (activeLeftNav === 'Impact') {
       return <ImpactPage />;
@@ -252,7 +277,27 @@ const renderActiveView = () => {
     return <div className="p-8"><h1 className="text-4xl font-bold text-[#003E7C]">{activeLeftNav}</h1><p className="text-gray-500 mt-2">This page is under construction.</p></div>;
   };
 
-  const EvaluationView = ({ evaluation, onUpdateName, onGoBack, projects, onAssignRequest, onNavigate }) => {
+  const EvaluationView = ({ 
+    evaluation, 
+    onUpdateName, 
+    onGoBack, 
+    projects, 
+    onAssignRequest, 
+    onNavigate,
+    mainMessages,
+    simulationRooms,
+    simulationMessages,
+    onSendMessage,
+    onLaunchSimulation,
+    activeRightTab,
+    setActiveRightTab,
+    proposalText,
+    nextSteps,
+    onUpdateNextStep,
+    onDeleteNextStep,
+    onAddNewStep,
+    highlightedNextStepId
+  }) => {
     const assignedProject = projects.find(p => p.evaluationIds.includes(evaluation?.id));
 
     return (
@@ -268,7 +313,7 @@ const renderActiveView = () => {
             tag="h1"
             textClasses="text-3xl font-bold text-[#003E7C]"
           />
-        {assignedProject ? (
+          {assignedProject ? (
             <button onClick={() => onAssignRequest(evaluation.id)} className="text-sm font-medium text-[#003E7C] bg-blue-100 px-3 py-1 rounded-full hover:bg-blue-200 transition-colors">
               {assignedProject.name}
             </button>
@@ -286,8 +331,8 @@ const renderActiveView = () => {
             mainMessages={mainMessages}
             simulationRooms={simulationRooms}
             simulationMessages={simulationMessages}
-            onSendMessage={handleSendMessage}
-            onLaunchSimulation={handleLaunchSimulation}
+            onSendMessage={onSendMessage}
+            onLaunchSimulation={onLaunchSimulation}
             onNavigate={onNavigate}
           />
         </div>
@@ -300,7 +345,8 @@ const renderActiveView = () => {
           <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50 rounded-b-xl">
             {activeRightTab === 'proposal' && <ProposalView content={proposalText} />}
             {activeRightTab === 'data' && <SupportingDataView />}
-            {activeRightTab === 'nextSteps' && <NextStepsView steps={nextSteps} onUpdate={handleUpdateNextStep} onDelete={handleDeleteNextStep} onAdd={() => setShowAddStepModal(true)} />}          </div>
+            {activeRightTab === 'nextSteps' && <NextStepsView steps={nextSteps} onUpdate={onUpdateNextStep} onDelete={onDeleteNextStep} onAdd={onAddNewStep} highlightedStepId={highlightedNextStepId} />}
+          </div>
         </div>
       </div>
     </>
@@ -668,8 +714,7 @@ const AutosizeTextarea = (props) => {
     );
 };
 // --- WELCOME SCREEN COMPONENT ---
-// --- WELCOME SCREEN COMPONENT ---
-const WelcomeScreen = ({ userName, onNavigateToEvaluations, onNavigateToProjects, onNavigateToImpact, onStartNewEvaluation, evaluations, projects, onSelectEvaluation }) => {
+const WelcomeScreen = ({ userName, onNavigateToEvaluations, onNavigateToProjects, onNavigateToImpact, onStartNewEvaluation, evaluations, projects, nextSteps, onSelectEvaluation }) => {
   const assignedEvaluations = projects.flatMap(p => 
     p.evaluationIds.map(evalId => {
         const evaluation = evaluations.find(e => e.id === evalId);
@@ -700,14 +745,10 @@ const WelcomeScreen = ({ userName, onNavigateToEvaluations, onNavigateToProjects
             {assignedEvaluations.slice(0, 2).map(ev => (
                  <ResumeCard 
                     key={ev.id}
-                    type={ev.type}
-                    title={ev.name}
+                    evaluation={ev}
                     projectName={ev.projectName}
-                    lastUpdated={ev.lastUpdated}
-                    simulations={ev.simulations}
-                    nextStep={ev.nextStep}
-                    color={ev.color}
-                    onSelect={(initialTab) => onSelectEvaluation(ev.id, initialTab)}
+                    onSelect={(initialTab, stepId) => onSelectEvaluation(ev.id, initialTab, stepId)}
+                    nextSteps={nextSteps}
                 />
             ))}
           </div>
@@ -754,36 +795,40 @@ const EvaluationCard = ({ title, description, icon: Icon, color, onClick }) => {
   );
 };
 
-const ResumeCard = ({ type, title, projectName, lastUpdated, simulations, nextStep, color, onAssign, onDelete, onSelect, onUpdateName }) => {
+const ResumeCard = ({ evaluation, projectName, onAssign, onDelete, onSelect, onUpdateName, nextSteps }) => {
     const colors = {
         blue: 'text-blue-600 bg-blue-100',
         indigo: 'text-indigo-600 bg-indigo-100',
         amber: 'text-amber-600 bg-amber-100',
     };
+    
+    const relevantNextSteps = nextSteps.filter(step => step.evaluationId === evaluation.id && step.status !== 'Completed');
+    const mostUrgentNextStep = relevantNextSteps.sort((a, b) => new Date(a.due) - new Date(b.due))[0];
+
     return (
         <div className="bg-white p-4 rounded-xl border border-gray-200/80 flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4">
             <div className="flex-grow cursor-pointer" onClick={() => onSelect()}>
                  <div className="flex items-center gap-3 mb-2 flex-wrap">
                     {onUpdateName ? (
                         <EditableTitle 
-                            initialValue={title}
+                            initialValue={evaluation.name}
                             onSave={onUpdateName}
                             tag="h4"
                             textClasses="text-lg font-semibold text-[#003E7C]"
                         />
                     ) : (
-                        <h4 className="text-lg font-semibold text-[#003E7C]">{title}</h4>
+                        <h4 className="text-lg font-semibold text-[#003E7C]">{evaluation.name}</h4>
                     )}
                     {projectName && <span className="text-xs font-semibold uppercase text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{projectName}</span>}
-                    <span className={`text-xs font-semibold uppercase ${colors[color]} px-2 py-0.5 rounded-full`}>{type}</span>
+                    <span className={`text-xs font-semibold uppercase ${colors[evaluation.color]} px-2 py-0.5 rounded-full`}>{evaluation.type}</span>
                 </div>
                 <div className="text-sm text-gray-500 flex items-center gap-4 flex-wrap">
-                    <span>Last updated: {lastUpdated}</span>
+                    <span>Last updated: {evaluation.lastUpdated}</span>
                     <button onClick={(e) => { e.stopPropagation(); onSelect('proposal'); }} className="flex items-center gap-1.5 text-[#0063C6] hover:underline">
                         <FileText size={14} /> Proposal
                     </button>
                     <span className="flex items-center gap-1.5">
-                        <Users size={14} className="text-gray-400" /> Simulations: {simulations}
+                        <Users size={14} className="text-gray-400" /> Simulations: {evaluation.simulations}
                     </span>
                 </div>
             </div>
@@ -798,10 +843,17 @@ const ResumeCard = ({ type, title, projectName, lastUpdated, simulations, nextSt
                         </button>
                     </>
                 ) : (
-                    <button onClick={(e) => { e.stopPropagation(); onSelect('nextSteps'); }} className="text-left w-full">
-                        <h5 className="text-sm font-semibold text-gray-700">Next Step</h5>
-                        <p className="text-sm text-gray-600 mt-1 hover:text-[#0063C6]">{nextStep.action} <span className="text-gray-400">({nextStep.owner} - {nextStep.due})</span></p>
-                    </button>
+                    mostUrgentNextStep ? (
+                        <button onClick={(e) => { e.stopPropagation(); onSelect('nextSteps', mostUrgentNextStep.id); }} className="text-left w-full">
+                            <h5 className="text-sm font-semibold text-gray-700">Next Step</h5>
+                            <p className="text-sm text-gray-600 mt-1 hover:text-[#0063C6]">{mostUrgentNextStep.action} <span className="text-gray-400">({mostUrgentNextStep.due})</span></p>
+                        </button>
+                    ) : (
+                         <div className="text-left">
+                            <h5 className="text-sm font-semibold text-gray-700">Next Step</h5>
+                            <p className="text-sm text-gray-500 mt-1">No pending action items.</p>
+                        </div>
+                    )
                 )}
             </div>
         </div>
@@ -851,7 +903,7 @@ const ImpactTable = () => {
     );
 };
 
-const EvaluationsPage = ({ evaluations, onSelectEvaluation, onDelete, onAssignRequest, onUpdateName }) => (
+const EvaluationsPage = ({ evaluations, onSelectEvaluation, onDelete, onAssignRequest, onUpdateName, nextSteps }) => (
     <div className="flex-grow overflow-y-auto">
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
@@ -862,13 +914,9 @@ const EvaluationsPage = ({ evaluations, onSelectEvaluation, onDelete, onAssignRe
             {evaluations.map(ev => (
                 <ResumeCard 
                     key={ev.id}
-                    type={ev.type}
-                    title={ev.name}
-                    lastUpdated={ev.lastUpdated}
-                    simulations={ev.simulations}
-                    nextStep={ev.nextStep}
-                    color={ev.color}
-                    onSelect={(initialTab) => onSelectEvaluation(ev.id, initialTab)}
+                    evaluation={ev}
+                    nextSteps={nextSteps}
+                    onSelect={(initialTab, stepId) => onSelectEvaluation(ev.id, initialTab, stepId)}
                     onDelete={(e) => { e.stopPropagation(); onDelete(ev.id); }}
                     onAssign={(e) => { e.stopPropagation(); onAssignRequest(ev.id); }}
                     onUpdateName={(newName) => onUpdateName(ev.id, newName)}
@@ -908,7 +956,7 @@ const AboutPage = () => (
         </div>
     </div>
 );
-const ProjectsPage = ({ projects, allEvaluations, onUpdateProjectName, onCreateNewProject, onSelectEvaluation }) => {
+const ProjectsPage = ({ projects, allEvaluations, onUpdateProjectName, onCreateNewProject, onSelectEvaluation, nextSteps }) => {
     const [newProjectName, setNewProjectName] = useState('');
     const [expandedProjects, setExpandedProjects] = useState(projects.map(p => p.id));
 
@@ -959,13 +1007,9 @@ const ProjectsPage = ({ projects, allEvaluations, onUpdateProjectName, onCreateN
                                         allEvaluations.filter(ev => project.evaluationIds.includes(ev.id)).map(ev => (
                                             <ResumeCard
                                                 key={ev.id}
-                                                type={ev.type}
-                                                title={ev.name}
-                                                lastUpdated={ev.lastUpdated}
-                                                simulations={ev.simulations}
-                                                nextStep={ev.nextStep}
-                                                color={ev.color}
-                                                onSelect={(initialTab) => onSelectEvaluation(ev.id, initialTab)}
+                                                evaluation={ev}
+                                                nextSteps={nextSteps}
+                                                onSelect={(initialTab, stepId) => onSelectEvaluation(ev.id, initialTab, stepId)}
                                             />
                                         ))
                                     ) : (
@@ -1112,6 +1156,39 @@ const AddNextStepModal = ({ onClose, onAdd }) => {
     );
 };
 
+const SettingsPage = ({ userName, onUserNameChange, initialTab }) => {
+    const [activeTab, setActiveTab] = useState(initialTab || 'Profile');
+
+    useEffect(() => {
+        if (initialTab) {
+            setActiveTab(initialTab);
+        }
+    }, [initialTab]);
+
+
+    return (
+        <div className="flex-grow overflow-y-auto">
+            <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+                <h2 className="text-3xl font-bold text-[#003E7C] mb-8">Settings</h2>
+                <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm">
+                    <nav className="flex border-b border-gray-200/80">
+                        <SettingsTabButton name="Profile" activeTab={activeTab} onClick={setActiveTab} />
+                        <SettingsTabButton name="Files" activeTab={activeTab} onClick={setActiveTab} />
+                        <SettingsTabButton name="Integrations" activeTab={activeTab} onClick={setActiveTab} />
+                        <SettingsTabButton name="Stakeholders" activeTab={activeTab} onClick={setActiveTab} />
+                    </nav>
+                    <div className="p-8">
+                        {activeTab === 'Profile' && <ProfileSettings userName={userName} onUserNameChange={onUserNameChange} />}
+                        {activeTab === 'Files' && <FileSettings />}
+                        {activeTab === 'Integrations' && <IntegrationsSettings />}
+                        {activeTab === 'Stakeholders' && <StakeholderSettings />}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const SettingsTabButton = ({ name, activeTab, onClick }) => (
     <button 
         onClick={() => onClick(name)}
@@ -1251,39 +1328,6 @@ const IntegrationsSettings = () => {
                     </div>
                 </div>
             )}
-        </div>
-    );
-};
-
-const SettingsPage = ({ userName, onUserNameChange, initialTab }) => {
-    const [activeTab, setActiveTab] = useState(initialTab || 'Profile');
-
-    useEffect(() => {
-        if (initialTab) {
-            setActiveTab(initialTab);
-        }
-    }, [initialTab]);
-
-
-    return (
-        <div className="flex-grow overflow-y-auto">
-            <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-                <h2 className="text-3xl font-bold text-[#003E7C] mb-8">Settings</h2>
-                <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm">
-                    <nav className="flex border-b border-gray-200/80">
-                        <SettingsTabButton name="Profile" activeTab={activeTab} onClick={setActiveTab} />
-                        <SettingsTabButton name="Files" activeTab={activeTab} onClick={setActiveTab} />
-                        <SettingsTabButton name="Integrations" activeTab={activeTab} onClick={setActiveTab} />
-                        <SettingsTabButton name="Stakeholders" activeTab={activeTab} onClick={setActiveTab} />
-                    </nav>
-                    <div className="p-8">
-                        {activeTab === 'Profile' && <ProfileSettings userName={userName} onUserNameChange={onUserNameChange} />}
-                        {activeTab === 'Files' && <FileSettings />}
-                        {activeTab === 'Integrations' && <IntegrationsSettings />}
-                        {activeTab === 'Stakeholders' && <StakeholderSettings />}
-                    </div>
-                </div>
-            </div>
         </div>
     );
 };
