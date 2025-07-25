@@ -132,12 +132,21 @@ export default function App() {
     }
   };
   
-  const handleAssignToProject = (evaluationId, projectId) => {
-    setProjects(prevProjects => prevProjects.map(p => 
-        p.id === projectId 
-        ? { ...p, evaluationIds: [...p.evaluationIds, evaluationId] } 
-        : p
-    ));
+const handleAssignToProject = (evaluationId, newProjectId) => {
+    setProjects(prevProjects => {
+        // First, remove the evaluation from any project it might already be in.
+        const projectsWithoutEval = prevProjects.map(p => ({
+            ...p,
+            evaluationIds: p.evaluationIds.filter(id => id !== evaluationId)
+        }));
+
+        // Now, add the evaluation to the new project.
+        return projectsWithoutEval.map(p =>
+            p.id === newProjectId
+            ? { ...p, evaluationIds: [...p.evaluationIds, evaluationId] }
+            : p
+        );
+    });
     setAssigningEvaluation(null);
   };
   
@@ -235,8 +244,10 @@ const renderActiveView = () => {
             tag="h1"
             textClasses="text-3xl font-bold text-[#003E7C]"
           />
-          {assignedProject ? (
-            <span className="text-sm font-medium text-[#003E7C] bg-blue-100 px-3 py-1 rounded-full">{assignedProject.name}</span>
+        {assignedProject ? (
+            <button onClick={() => onAssignRequest(evaluation.id)} className="text-sm font-medium text-[#003E7C] bg-blue-100 px-3 py-1 rounded-full hover:bg-blue-200 transition-colors">
+              {assignedProject.name}
+            </button>
           ) : (
             <button onClick={() => onAssignRequest(evaluation.id)} title="Add to Project" className="text-gray-400 hover:text-[#0063C6] transition-colors">
               <FolderPlus className="w-6 h-6" />
