@@ -110,14 +110,14 @@ export default function App() {
     return null;
   };
 
-  const handleStartNewEvaluation = () => {
+const handleStartNewEvaluation = (name, color) => {
     const newEvaluation = {
       id: Date.now(),
-      name: 'New Evaluation: Roadmap Planning',
-      type: 'Roadmap Planning',
+      name: `New Evaluation: ${name}`,
+      type: name,
       lastUpdated: 'Just now',
       simulations: 0,
-      color: 'blue'
+      color: color,
     };
     setEvaluations(prev => [newEvaluation, ...prev]);
     setActiveLeftNav('Evaluations');
@@ -756,11 +756,11 @@ const WelcomeScreen = ({ userName, onNavigateToEvaluations, onNavigateToProjects
 
         <WelcomeSection title="Start a new Evaluation">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-            <EvaluationCard title="Roadmap Planning" description="Define and prioritize features for your next product cycle." icon={Map} color="blue" onClick={onStartNewEvaluation} />
-            <EvaluationCard title="Spike in the Roadmap" description="Investigate a technical or business unknown to de-risk future work." icon={Search} color="indigo" />
-            <EvaluationCard title="Analyze Existing Proposal" description="Upload a document to identify its strengths, weaknesses, and biases." icon={BarChart3} color="emerald" />
-            <EvaluationCard title="Pricing Exercise" description="Model different pricing strategies and their potential revenue impact." icon={DollarSign} color="amber" />
-            <EvaluationCard title="Strategic Sandbox" description="Tackle any product challenge or explore new ideas in an open-ended conversation." icon={Lightbulb} color="cyan" />
+            <EvaluationCard title="Roadmap Planning" description="Define and prioritize features for your next product cycle." icon={Map} color="blue" onClick={() => onStartNewEvaluation('Roadmap Planning', 'blue')} />
+            <EvaluationCard title="Spike in the Roadmap" description="Investigate a technical or business unknown to de-risk future work." icon={Search} color="indigo" onClick={() => onStartNewEvaluation('Spike in the Roadmap', 'indigo')} />
+            <EvaluationCard title="Analyze Existing Proposal" description="Upload a document to identify its strengths, weaknesses, and biases." icon={BarChart3} color="emerald" onClick={() => onStartNewEvaluation('Analyze Existing Proposal', 'emerald')} />
+            <EvaluationCard title="Pricing Exercise" description="Model different pricing strategies and their potential revenue impact." icon={DollarSign} color="amber" onClick={() => onStartNewEvaluation('Pricing Exercise', 'amber')} />
+            <EvaluationCard title="Strategic Sandbox" description="Tackle any product challenge or explore new ideas in an open-ended conversation." icon={Lightbulb} color="cyan" onClick={() => onStartNewEvaluation('Strategic Sandbox', 'cyan')} />
           </div>
         </WelcomeSection>
 
