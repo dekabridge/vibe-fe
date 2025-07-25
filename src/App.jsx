@@ -50,6 +50,7 @@ export default function App() {
   const [projects, setProjects] = useState(initialProjects);
   const [activeEvaluationId, setActiveEvaluationId] = useState(null);
   const [assigningEvaluation, setAssigningEvaluation] = useState(null);
+  const [showAddStepModal, setShowAddStepModal] = useState(false);
   const [userName, setUserName] = useState('Skyler Place');
   const [settingsInitialTab, setSettingsInitialTab] = useState('Profile');
 
@@ -177,7 +178,26 @@ const handleAssignToProject = (evaluationId, newProjectId) => {
     const newProject = { id: Date.now(), name, evaluationIds: [] };
     setProjects(prev => [...prev, newProject]);
   };
+const handleUpdateNextStep = (id, field, value) => {
+    setNextSteps(prevSteps =>
+      prevSteps.map(step =>
+        step.id === id ? { ...step, [field]: value } : step
+      )
+    );
+  };
 
+  const handleDeleteNextStep = (id) => {
+    setNextSteps(prevSteps => prevSteps.filter(step => step.id !== id));
+  };
+
+const handleAddNewStep = (newStepData) => {
+    const newStep = {
+      id: Date.now(),
+      ...newStepData
+    };
+    setNextSteps(prevSteps => [...prevSteps, newStep]);
+    setShowAddStepModal(false);
+  };
   const unassignedEvaluations = evaluations.filter(ev => 
     !projects.some(p => p.evaluationIds.includes(ev.id))
   );
@@ -277,8 +297,7 @@ const renderActiveView = () => {
           <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50 rounded-b-xl">
             {activeRightTab === 'proposal' && <ProposalView content={proposalText} />}
             {activeRightTab === 'data' && <SupportingDataView />}
-            {activeRightTab === 'nextSteps' && <NextStepsView steps={nextSteps} />}
-          </div>
+            {activeRightTab === 'nextSteps' && <NextStepsView steps={nextSteps} onUpdate={handleUpdateNextStep} onDelete={handleDeleteNextStep} onAdd={() => setShowAddStepModal(true)} />}          </div>
         </div>
       </div>
     </>
@@ -307,6 +326,13 @@ const renderActiveView = () => {
           onClose={() => setAssigningEvaluation(null)}
           onAssign={handleAssignToProject}
           onCreateAndAssign={handleCreateAndAssignProject}
+        />
+      )}
+
+      {showAddStepModal && (
+        <AddNextStepModal
+          onClose={() => setShowAddStepModal(false)}
+          onAdd={handleAddNewStep}
         />
       )}
     </div>
@@ -502,33 +528,82 @@ const PersonaButton = ({ name, onSelect, isSelected, disabled }) => (
   </button>
 );
 
-const NextStepsView = ({ steps }) => (
-    <div className="p-6 space-y-4">
-        <h3 className="text-xl font-bold text-[#003E7C]">Action Items</h3>
-        <div className="bg-white rounded-xl border border-gray-200/80">
-            <table className="w-full text-left">
-                <thead className="border-b border-gray-200/80">
-                    <tr>
-                        <th className="p-4 text-sm font-semibold text-gray-500">Action</th>
-                        <th className="p-4 text-sm font-semibold text-gray-500">Owner</th>
-                        <th className="p-4 text-sm font-semibold text-gray-500">Due Date</th>
-                        <th className="p-4 text-sm font-semibold text-gray-500">Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {steps.map(step => (
-                        <tr key={step.id} className="border-b border-gray-200/80 last:border-b-0">
-                            <td className="p-4 text-gray-800 font-medium">{step.action}</td>
-                            <td className="p-4 text-gray-600">{step.owner}</td>
-                            <td className="p-4 text-gray-600">{step.due}</td>
-                            <td className="p-4"><span className="px-2.5 py-1 text-xs font-semibold bg-yellow-100 text-yellow-800 rounded-full">{step.status}</span></td>
+const NextStepsView = ({ steps, onUpdate, onDelete, onAdd }) => {
+    const statusOptions = ['Not Started', 'In Progress', 'Completed'];
+
+    // Ref for the textarea to handle auto-sizing
+    const textAreaRef = useRef(null);
+
+    useEffect(() => {
+        if (textAreaRef.current) {
+            textAreaRef.current.style.height = 'auto';
+            textAreaRef.current.style.height = `${textAreaRef.current.scrollHeight}px`;
+        }
+    }, [steps]);
+
+
+    return (
+        <div className="space-y-4">
+            <div className="flex justify-between items-center">
+                <h3 className="text-xl font-bold text-[#003E7C]">Action Items</h3>
+                <button onClick={onAdd} className="bg-[#0063C6] text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-[#003E7C]">Add Action Item</button>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200/80">
+                <table className="w-full text-left table-fixed">
+                    <thead className="border-b border-gray-200/80">
+                        <tr>
+                            <th className="p-4 text-sm font-semibold text-gray-500 w-1/2">Action</th>
+                            <th className="p-4 text-sm font-semibold text-gray-500">Due Date</th>
+                            <th className="p-4 text-sm font-semibold text-gray-500">Status</th>
+                            <th className="p-4 text-sm font-semibold text-gray-500 w-12"></th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {steps.map(step => (
+                            <tr key={step.id} className="border-b border-gray-200/80 last:border-b-0">
+                                <td className="p-2 align-top">
+                                    <textarea 
+                                        ref={textAreaRef}
+                                        value={step.action}
+                                        onChange={(e) => onUpdate(step.id, 'action', e.target.value)}
+                                        rows={1}
+                                        className="w-full bg-transparent p-2 border border-transparent rounded-md focus:bg-white focus:border-gray-300 focus:outline-none resize-none overflow-hidden"
+                                        onInput={(e) => {
+                                            e.target.style.height = 'auto';
+                                            e.target.style.height = `${e.target.scrollHeight}px`;
+                                        }}
+                                    />
+                                </td>
+                                <td className="p-2 align-top">
+                                    <input 
+                                        type="date"
+                                        value={step.due}
+                                        onChange={(e) => onUpdate(step.id, 'due', e.target.value)}
+                                        className="w-full bg-transparent p-2 border border-transparent rounded-md focus:bg-white focus:border-gray-300 focus:outline-none"
+                                    />
+                                </td>
+                                <td className="p-2 align-top">
+                                    <select 
+                                        value={step.status} 
+                                        onChange={(e) => onUpdate(step.id, 'status', e.target.value)}
+                                        className="w-full bg-transparent p-2 border border-transparent rounded-md focus:bg-white focus:border-gray-300 focus:outline-none"
+                                    >
+                                        {statusOptions.map(option => <option key={option} value={option}>{option}</option>)}
+                                    </select>
+                                </td>
+                                <td className="p-2 text-right align-top">
+                                    <button onClick={() => onDelete(step.id)} className="text-gray-400 hover:text-red-600 p-2">
+                                        <Trash2 size={16} />
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 const EditableTitle = ({ initialValue, onSave, tag: Tag = 'h1', textClasses }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -937,7 +1012,81 @@ const AssignProjectModal = ({ evaluation, projects, onClose, onAssign, onCreateA
     );
 };
 
+const AddNextStepModal = ({ onClose, onAdd }) => {
+    const [action, setAction] = useState('');
+    const [due, setDue] = useState(new Date().toISOString().split('T')[0]);
+    const [status, setStatus] = useState('Not Started');
+    const statusOptions = ['Not Started', 'In Progress', 'Completed'];
+    const modalRef = useRef();
 
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (modalRef.current && !modalRef.current.contains(event.target)) {
+                onClose();
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [onClose]);
+
+    const handleCreate = () => {
+        if (action.trim()) {
+            onAdd({
+                action,
+                due,
+                status,
+                owner: 'Unassigned' // Default owner
+            });
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+            <div ref={modalRef} className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold text-[#003E7C]">Add New Action Item</h3>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
+                </div>
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Action</label>
+                        <textarea 
+                            value={action}
+                            onChange={(e) => setAction(e.target.value)}
+                            rows={3}
+                            placeholder="Describe the action item..."
+                            className="mt-1 w-full border-gray-300 rounded-md shadow-sm focus:ring-[#0063C6] focus:border-[#0063C6] sm:text-sm p-2 border"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Due Date</label>
+                        <input 
+                            type="date"
+                            value={due}
+                            onChange={(e) => setDue(e.target.value)}
+                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#0063C6] focus:border-[#0063C6] sm:text-sm p-2 border"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Status</label>
+                        <select
+                            value={status}
+                            onChange={(e) => setStatus(e.target.value)}
+                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#0063C6] focus:border-[#0063C6] sm:text-sm p-2 border bg-white"
+                        >
+                            {statusOptions.map(option => (
+                                <option key={option} value={option}>{option}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+                <div className="mt-6 pt-4 border-t flex justify-end">
+                    <button onClick={handleCreate} className="bg-[#0063C6] text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-[#003E7C]">Add Item</button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const SettingsTabButton = ({ name, activeTab, onClick }) => (
     <button 
