@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bot, User, Cpu, FileText, Database, Briefcase, Users, Send, Building, Ticket, Bug, ChevronDown, ChevronRight, CheckCircle, Home, ClipboardList, FolderKanban, Trophy, Settings, ListChecks, PlusCircle, FolderPlus, Map, Search, BarChart3, DollarSign, Lightbulb, BookOpen, UserCircle, ChevronsLeft, ChevronsRight, Trash2, X, ArrowLeft } from 'lucide-react';
+import { Bot, User, Cpu, FileText, Database, Briefcase, Users, Send, Building, Ticket, Bug, ChevronDown, ChevronRight, CheckCircle, Home, ClipboardList, FolderKanban, Trophy, Settings, ListChecks, PlusCircle, FolderPlus, Map, Search, BarChart3, DollarSign, Lightbulb, BookOpen, UserCircle, ChevronsLeft, ChevronsRight, Trash2, X, ArrowLeft, UploadCloud, File as FileIcon } from 'lucide-react';
 
 // --- MOCK DATA ---
 const supportingData = {
@@ -32,6 +32,14 @@ const initialProjects = [
     { id: 2, name: 'Core Platform Enhancements', evaluationIds: [3] },
 ];
 
+const defaultStakeholders = [
+    { id: 1, name: 'CEO', basePersona: 'CEO', guidance: 'Focuses on top-line growth and market perception. Tends to be risk-averse regarding brand image.' },
+    { id: 2, name: 'CFO', basePersona: 'CFO', guidance: 'Primarily concerned with budget adherence, ROI, and long-term financial viability. Very data-driven.' },
+    { id: 3, name: 'Head of Sales', basePersona: 'Head of Sales', guidance: 'Concerned with sales cycle length, team enablement, and competitive positioning. Responds well to revenue projections.' },
+    { id: 4, name: 'Head of Engineering', basePersona: 'Head of Engineering', guidance: 'Focuses on technical feasibility, scalability, and team capacity.' },
+    { id: 5, name: 'Voice of the Customer', basePersona: 'Voice of the Customer', guidance: 'Represents the end-user experience, focusing on usability, satisfaction, and pain points.' },
+];
+
 // --- MAIN APP COMPONENT ---
 export default function App() {
   // --- STATE MANAGEMENT ---
@@ -42,6 +50,7 @@ export default function App() {
   const [projects, setProjects] = useState(initialProjects);
   const [activeEvaluationId, setActiveEvaluationId] = useState(null);
   const [assigningEvaluation, setAssigningEvaluation] = useState(null);
+  const [userName, setUserName] = useState('Skyler Place');
 
   const [mainMessages, setMainMessages] = useState([
     { sender: 'DekaBridge Agent', text: 'Welcome to the evaluation roadmap. I am the DekaBridge Agent, your strategic AI. How can we begin defining the problem space today?', type: 'ai' },
@@ -105,7 +114,9 @@ export default function App() {
         ...prev,
         [newRoomId]: [simulationMessage, firstMessage]
       }));
+      return newRoomId; // Return the new ID
     }
+    return null;
   };
 
   const handleStartNewEvaluation = () => {
@@ -185,12 +196,14 @@ export default function App() {
     setActiveEvaluationId(null);
   };
 
-  const renderActiveView = () => {
+const renderActiveView = () => {
     if (activeLeftNav === 'Welcome') {
       return <WelcomeScreen 
+        userName={userName}
         evaluations={evaluations} 
         projects={projects}
         onNavigateToEvaluations={() => setActiveLeftNav('Evaluations')} 
+        onNavigateToProjects={() => setActiveLeftNav('Projects')}
         onNavigateToImpact={() => setActiveLeftNav('Impact')} 
         onStartNewEvaluation={handleStartNewEvaluation}
         onSelectEvaluation={handleSelectSpecificEvaluation}
@@ -208,6 +221,9 @@ export default function App() {
     }
     if (activeLeftNav === 'Impact') {
       return <ImpactPage />;
+    }
+    if (activeLeftNav === 'Settings') {
+        return <SettingsPage userName={userName} onUserNameChange={setUserName} />;
     }
     return <div className="p-8"><h1 className="text-4xl font-bold text-[#003E7C]">{activeLeftNav}</h1><p className="text-gray-500 mt-2">This page is under construction.</p></div>;
   };
@@ -337,9 +353,10 @@ const ChatContainer = ({ mainMessages, simulationRooms, simulationMessages, onSe
       
       {activeTab === 'simulation-launcher' ? (
         <SimulationLauncherView onLaunch={(selectedAgents) => {
-            onLaunchSimulation(selectedAgents);
-            const newRoomId = `sim-room-${simulationRooms.length + 1}`;
-            setActiveTab(newRoomId);
+            const newRoomId = onLaunchSimulation(selectedAgents);
+            if (newRoomId) {
+                setActiveTab(newRoomId);
+            }
         }} />
       ) : (
         <ChatView messages={currentMessages} onSendMessage={(text) => onSendMessage(text, activeTab)} />
@@ -567,8 +584,7 @@ const EditableTitle = ({ initialValue, onSave, tag: Tag = 'h1', textClasses }) =
 
 
 // --- WELCOME SCREEN COMPONENT ---
-const WelcomeScreen = ({ onNavigateToEvaluations, onNavigateToImpact, onStartNewEvaluation, evaluations, projects, onSelectEvaluation }) => {
-  const assignedEvaluations = projects.flatMap(p => 
+const WelcomeScreen = ({ userName, onNavigateToEvaluations, onNavigateToProjects, onNavigateToImpact, onStartNewEvaluation, evaluations, projects, onSelectEvaluation }) => {  const assignedEvaluations = projects.flatMap(p => 
     p.evaluationIds.map(evalId => {
         const evaluation = evaluations.find(e => e.id === evalId);
         return { ...evaluation, projectName: p.name };
@@ -579,8 +595,7 @@ const WelcomeScreen = ({ onNavigateToEvaluations, onNavigateToImpact, onStartNew
     <div className="flex-grow overflow-y-auto">
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="mb-12">
-          <h2 className="text-4xl font-bold tracking-tight text-[#003E7C] sm:text-5xl">Welcome back, Skyler.</h2>
-          <p className="mt-2 text-lg text-gray-600">Let's make some smart, fast, and objective decisions today.</p>
+        <h2 className="text-4xl font-bold tracking-tight text-[#003E7C] sm:text-5xl">Welcome back, {userName.split(' ')[0]}.</h2>          <p className="mt-2 text-lg text-gray-600">Let's make some smart decisions today.</p>
         </div>
 
         <WelcomeSection title="Start a new Evaluation">
@@ -593,7 +608,7 @@ const WelcomeScreen = ({ onNavigateToEvaluations, onNavigateToImpact, onStartNew
           </div>
         </WelcomeSection>
 
-        <WelcomeSection title="Resume an Evaluation" onHeaderClick={onNavigateToEvaluations} isLink>
+        <WelcomeSection title="Resume an Evaluation" onHeaderClick={onNavigateToProjects} isLink>
           <div className="space-y-4">
             {assignedEvaluations.slice(0, 2).map(ev => (
                  <ResumeCard 
@@ -909,6 +924,278 @@ const AssignProjectModal = ({ evaluation, projects, onClose, onAssign, onCreateA
                         <button onClick={handleCreate} className="bg-[#0063C6] text-white px-4 h-10 rounded-lg font-semibold hover:bg-[#003E7C] transition-colors">Create & Assign</button>
                     </div>
                 </div>
+            </div>
+        </div>
+    );
+};
+
+const SettingsPage = ({ userName, onUserNameChange }) => {
+    const [activeTab, setActiveTab] = useState('Profile');
+
+    return (
+        <div className="flex-grow overflow-y-auto">
+            <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+                <h2 className="text-3xl font-bold text-[#003E7C] mb-8">Settings</h2>
+                <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm">
+                    <nav className="flex border-b border-gray-200/80">
+                        <SettingsTabButton name="Profile" activeTab={activeTab} onClick={setActiveTab} />
+                        <SettingsTabButton name="Files" activeTab={activeTab} onClick={setActiveTab} />
+                        <SettingsTabButton name="Integrations" activeTab={activeTab} onClick={setActiveTab} />
+                        <SettingsTabButton name="Stakeholders" activeTab={activeTab} onClick={setActiveTab} />
+                    </nav>
+                    <div className="p-8">
+                        {activeTab === 'Profile' && <ProfileSettings userName={userName} onUserNameChange={onUserNameChange} />}
+                        {activeTab === 'Files' && <FileSettings />}
+                        {activeTab === 'Integrations' && <IntegrationsSettings />}
+                        {activeTab === 'Stakeholders' && <StakeholderSettings />}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const SettingsTabButton = ({ name, activeTab, onClick }) => (
+    <button 
+        onClick={() => onClick(name)}
+        className={`px-6 py-4 text-sm font-semibold transition-colors border-b-2 ${activeTab === name ? 'text-[#0063C6] border-[#0063C6]' : 'text-gray-500 border-transparent hover:text-[#003E7C]'}`}
+    >
+        {name}
+    </button>
+);
+
+const ProfileSettings = ({ userName, onUserNameChange }) => {
+    const [role, setRole] = useState('Product Manager');
+
+    return (
+        <div>
+            <h3 className="text-xl font-bold text-[#003E7C] mb-6">Profile</h3>
+            <div className="space-y-6">
+                <div className="flex items-center gap-6">
+                    <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center">
+                        <UserCircle size={48} className="text-gray-400" />
+                    </div>
+                    <button className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-300">Upload Picture</button>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Name</label>
+                    <input type="text" value={userName} onChange={(e) => onUserNameChange(e.target.value)} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#0063C6] focus:border-[#0063C6] sm:text-sm p-2 border" />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Role</label>
+                    <input type="text" value={role} onChange={(e) => setRole(e.target.value)} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#0063C6] focus:border-[#0063C6] sm:text-sm p-2 border" />
+                </div>
+                 <button className="bg-[#0063C6] text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-[#003E7C]">Save Changes</button>
+            </div>
+        </div>
+    );
+};
+
+const FileSettings = () => {
+    const [files, setFiles] = useState([
+        { id: 1, name: 'Q3_Roadmap_Draft.pdf', type: 'pdf' },
+        { id: 2, name: 'Competitor_Analysis.docx', type: 'doc' },
+        { id: 3, name: 'Launch_Plan.pptx', type: 'ppt' },
+    ]);
+
+    const handleDelete = (id) => {
+        setFiles(prev => prev.filter(f => f.id !== id));
+    };
+    
+    const getFileIcon = (type) => {
+        if (type === 'pdf') return <FileIcon className="text-red-500" />;
+        if (type === 'doc') return <FileIcon className="text-blue-500" />;
+        if (type === 'ppt') return <FileIcon className="text-orange-500" />;
+        return <FileIcon className="text-gray-500" />;
+    };
+
+    return (
+        <div>
+            <h3 className="text-xl font-bold text-[#003E7C] mb-6">Uploaded Files</h3>
+            <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center mb-6 relative">
+                <UploadCloud size={48} className="mx-auto text-gray-400" />
+                <p className="mt-2 text-gray-600">Drag & drop files here or click to upload</p>
+                <p className="text-xs text-gray-400 mt-1">Supports: PDF, DOCX, PPTX</p>
+                <input type="file" className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" />
+            </div>
+            <div className="space-y-3">
+                {files.map(file => (
+                    <div key={file.id} className="flex items-center justify-between bg-gray-50 p-3 rounded-md">
+                        <div className="flex items-center gap-3">
+                            {getFileIcon(file.type)}
+                            <span className="font-medium">{file.name}</span>
+                        </div>
+                        <button onClick={() => handleDelete(file.id)} className="text-gray-400 hover:text-red-600">
+                            <Trash2 size={18} />
+                        </button>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+const IntegrationsSettings = () => {
+    const [connected, setConnected] = useState(['Jira']);
+
+    const allIntegrations = [
+        { id: 'jira', name: 'Jira', logo: 'https://cdn.worldvectorlogo.com/logos/jira-1.svg' },
+        { id: 'zendesk', name: 'Zendesk', logo: 'https://cdn.worldvectorlogo.com/logos/zendesk.svg' },
+        { id: 'onedrive', name: 'OneDrive', logo: 'https://cdn.worldvectorlogo.com/logos/onedrive-2.svg' },
+        { id: 'googledrive', name: 'Google Drive', logo: 'https://cdn.worldvectorlogo.com/logos/google-drive.svg' },
+        { id: 'salesforce', name: 'Salesforce', logo: 'https://cdn.worldvectorlogo.com/logos/salesforce-2.svg' },
+    ];
+
+    const handleConnect = (id) => {
+        setConnected(prev => [...prev, id]);
+    };
+
+    const handleDisconnect = (id) => {
+        setConnected(prev => prev.filter(item => item !== id));
+    };
+
+    const connectedIntegrations = allIntegrations.filter(int => connected.includes(int.id));
+    const availableIntegrations = allIntegrations.filter(int => !connected.includes(int.id));
+
+    return (
+        <div>
+            <h3 className="text-xl font-bold text-[#003E7C] mb-6">Integrations</h3>
+            
+            {connectedIntegrations.length > 0 && (
+                <div className="mb-8">
+                    <h4 className="text-md font-semibold text-gray-600 mb-4">Connected Integrations</h4>
+                    <div className="space-y-3">
+                        {connectedIntegrations.map(int => (
+                            <div key={int.id} className="flex items-center justify-between p-4 border rounded-lg bg-green-50 border-green-200">
+                                <div className="flex items-center gap-4">
+                                    <img src={int.logo} alt={`${int.name} logo`} className="h-8 w-8 object-contain" />
+                                    <span className="font-semibold">{int.name}</span>
+                                </div>
+                                <button onClick={() => handleDisconnect(int.id)} className="bg-red-500 text-white px-4 py-1.5 rounded-md text-sm font-medium hover:bg-red-600">Disconnect</button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {availableIntegrations.length > 0 && (
+                 <div>
+                    <h4 className="text-md font-semibold text-gray-600 mb-4">Available Integrations</h4>
+                    <div className="space-y-3">
+                        {availableIntegrations.map(int => (
+                            <div key={int.id} className="flex items-center justify-between p-4 border rounded-lg">
+                                <div className="flex items-center gap-4">
+                                    <img src={int.logo} alt={`${int.name} logo`} className="h-8 w-8 object-contain" />
+                                    <span className="font-semibold">{int.name}</span>
+                                </div>
+                                <button onClick={() => handleConnect(int.id)} className="bg-[#0063C6] hover:bg-[#003E7C] text-white px-4 py-1.5 rounded-md text-sm font-medium">Connect</button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+const StakeholderSettings = () => {
+    const basePersonas = ['CEO', 'CFO', 'Head of Sales', 'Head of Engineering', 'Voice of the Customer'];
+    
+    const [stakeholders, setStakeholders] = useState([
+        { id: 1, nickname: 'CEO', basePersona: 'CEO', guidance: 'Focuses on top-line growth and market perception. Tends to be risk-averse regarding brand image.' },
+        { id: 2, nickname: 'CFO', basePersona: 'CFO', guidance: 'Primarily concerned with budget adherence, ROI, and long-term financial viability. Very data-driven.' },
+        { id: 3, nickname: 'Head of Sales', basePersona: 'Head of Sales', guidance: 'Concerned with sales cycle length, team enablement, and competitive positioning. Responds well to revenue projections.' },
+        { id: 4, nickname: 'Head of Engineering', basePersona: 'Head of Engineering', guidance: 'Focuses on technical feasibility, scalability, and team capacity.' },
+        { id: 5, nickname: 'Voice of the Customer', basePersona: 'Voice of the Customer', guidance: 'Represents the end-user experience, focusing on usability, satisfaction, and pain points.' },
+    ]);
+    const [expandedId, setExpandedId] = useState(null);
+
+    const handleUpdateField = (id, field, value) => {
+        setStakeholders(prev => prev.map(s => s.id === id ? { ...s, [field]: value } : s));
+    };
+
+    const handleAddNew = () => {
+        const newStakeholder = {
+            id: Date.now(),
+            nickname: 'New Stakeholder',
+            basePersona: 'CEO',
+            guidance: 'Add behavioral guidance here...'
+        };
+        setStakeholders(prev => [...prev, newStakeholder]);
+        setExpandedId(newStakeholder.id);
+    };
+    
+    const handleDelete = (id) => {
+        setStakeholders(prev => prev.filter(s => s.id !== id));
+    };
+    
+    const handleReset = (id) => {
+        const stakeholderToReset = stakeholders.find(s => s.id === id);
+        const defaultState = defaultStakeholders.find(ds => ds.name === stakeholderToReset.basePersona);
+        if (defaultState) {
+            setStakeholders(prev => prev.map(s => s.id === id ? { ...s, nickname: defaultState.name, guidance: defaultState.guidance } : s));
+        }
+    };
+
+    return (
+        <div>
+            <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-[#003E7C]">Stakeholders</h3>
+                <button onClick={handleAddNew} className="bg-[#0063C6] text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-[#003E7C]">Add New</button>
+            </div>
+            <div className="space-y-4">
+                {stakeholders.map(stakeholder => (
+                    <div key={stakeholder.id} className="bg-white rounded-xl border border-gray-200/80">
+                        <button 
+                            className="w-full flex justify-between items-center p-4 text-left"
+                            onClick={() => setExpandedId(expandedId === stakeholder.id ? null : stakeholder.id)}
+                        >
+                            <h4 className="text-lg font-semibold text-[#003E7C]">{stakeholder.nickname}</h4>
+                            <ChevronDown className={`transition-transform ${expandedId === stakeholder.id ? 'rotate-180' : ''}`} />
+                        </button>
+                        {expandedId === stakeholder.id && (
+                            <div className="p-4 border-t border-gray-200/80">
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Nickname</label>
+                                        <input 
+                                            type="text"
+                                            value={stakeholder.nickname}
+                                            onChange={(e) => handleUpdateField(stakeholder.id, 'nickname', e.target.value)}
+                                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#0063C6] focus:border-[#0063C6] sm:text-sm p-2 border"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Base DekaBridge Persona</label>
+                                        <select
+                                            value={stakeholder.basePersona}
+                                            onChange={(e) => handleUpdateField(stakeholder.id, 'basePersona', e.target.value)}
+                                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#0063C6] focus:border-[#0063C6] sm:text-sm p-2 border bg-white"
+                                        >
+                                            {basePersonas.map(persona => (
+                                                <option key={persona} value={persona}>{persona}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Additional Behavioral Guidance</label>
+                                        <textarea 
+                                            value={stakeholder.guidance}
+                                            onChange={(e) => handleUpdateField(stakeholder.id, 'guidance', e.target.value)}
+                                            rows={4}
+                                            className="mt-1 w-full border-gray-300 rounded-md shadow-sm focus:ring-[#0063C6] focus:border-[#0063C6] sm:text-sm p-2 border"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="mt-4 pt-4 border-t border-gray-200/80 flex justify-end gap-2">
+                                    <button className="text-sm font-medium text-white bg-green-500 hover:bg-green-600 px-4 py-2 rounded-md">Validate Changes</button>
+                                    <button onClick={() => handleReset(stakeholder.id)} className="text-sm font-medium text-gray-600 bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-md">Reset to Default</button>
+                                    <button onClick={() => handleDelete(stakeholder.id)} className="text-sm font-medium text-white bg-red-500 hover:bg-red-600 px-4 py-2 rounded-md">Delete</button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                ))}
             </div>
         </div>
     );
