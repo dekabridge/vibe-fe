@@ -922,38 +922,7 @@ const AssignProjectModal = ({ evaluation, projects, onClose, onAssign, onCreateA
     );
 };
 
-const SettingsPage = ({ userName, onUserNameChange, initialTab }) => {
-    const [activeTab, setActiveTab] = useState(initialTab || 'Profile');
 
-    useEffect(() => {
-        if (initialTab) {
-            setActiveTab(initialTab);
-        }
-    }, [initialTab]);
-
-
-    return (
-        <div className="flex-grow overflow-y-auto">
-            <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-                <h2 className="text-3xl font-bold text-[#003E7C] mb-8">Settings</h2>
-                <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm">
-                    <nav className="flex border-b border-gray-200/80">
-                        <SettingsTabButton name="Profile" activeTab={activeTab} onClick={setActiveTab} />
-                        <SettingsTabButton name="Files" activeTab={activeTab} onClick={setActiveTab} />
-                        <SettingsTabButton name="Integrations" activeTab={activeTab} onClick={setActiveTab} />
-                        <SettingsTabButton name="Stakeholders" activeTab={activeTab} onClick={setActiveTab} />
-                    </nav>
-                    <div className="p-8">
-                        {activeTab === 'Profile' && <ProfileSettings userName={userName} onUserNameChange={onUserNameChange} />}
-                        {activeTab === 'Files' && <FileSettings />}
-                        {activeTab === 'Integrations' && <IntegrationsSettings />}
-                        {activeTab === 'Stakeholders' && <StakeholderSettings />}
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
 
 const SettingsTabButton = ({ name, activeTab, onClick }) => (
     <button 
@@ -1098,30 +1067,59 @@ const IntegrationsSettings = () => {
     );
 };
 
+const SettingsPage = ({ userName, onUserNameChange, initialTab }) => {
+    const [activeTab, setActiveTab] = useState(initialTab || 'Profile');
+
+    useEffect(() => {
+        if (initialTab) {
+            setActiveTab(initialTab);
+        }
+    }, [initialTab]);
+
+
+    return (
+        <div className="flex-grow overflow-y-auto">
+            <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+                <h2 className="text-3xl font-bold text-[#003E7C] mb-8">Settings</h2>
+                <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm">
+                    <nav className="flex border-b border-gray-200/80">
+                        <SettingsTabButton name="Profile" activeTab={activeTab} onClick={setActiveTab} />
+                        <SettingsTabButton name="Files" activeTab={activeTab} onClick={setActiveTab} />
+                        <SettingsTabButton name="Integrations" activeTab={activeTab} onClick={setActiveTab} />
+                        <SettingsTabButton name="Stakeholders" activeTab={activeTab} onClick={setActiveTab} />
+                    </nav>
+                    <div className="p-8">
+                        {activeTab === 'Profile' && <ProfileSettings userName={userName} onUserNameChange={onUserNameChange} />}
+                        {activeTab === 'Files' && <FileSettings />}
+                        {activeTab === 'Integrations' && <IntegrationsSettings />}
+                        {activeTab === 'Stakeholders' && <StakeholderSettings />}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const StakeholderSettings = () => {
     const basePersonas = ['CEO', 'CFO', 'Head of Sales', 'Head of Engineering', 'Voice of the Customer'];
     
-    const [stakeholders, setStakeholders] = useState([
-        { id: 1, nickname: 'CEO', basePersona: 'CEO', guidance: 'Focuses on top-line growth and market perception. Tends to be risk-averse regarding brand image.' },
-        { id: 2, nickname: 'CFO', basePersona: 'CFO', guidance: 'Primarily concerned with budget adherence, ROI, and long-term financial viability. Very data-driven.' },
-        { id: 3, nickname: 'Head of Sales', basePersona: 'Head of Sales', guidance: 'Concerned with sales cycle length, team enablement, and competitive positioning. Responds well to revenue projections.' },
-        { id: 4, nickname: 'Head of Engineering', basePersona: 'Head of Engineering', guidance: 'Focuses on technical feasibility, scalability, and team capacity.' },
-        { id: 5, nickname: 'Voice of the Customer', basePersona: 'Voice of the Customer', guidance: 'Represents the end-user experience, focusing on usability, satisfaction, and pain points.' },
-    ]);
+    const [stakeholders, setStakeholders] = useState(defaultStakeholders);
     const [expandedId, setExpandedId] = useState(null);
+    const [showAddModal, setShowAddModal] = useState(false);
 
     const handleUpdateField = (id, field, value) => {
         setStakeholders(prev => prev.map(s => s.id === id ? { ...s, [field]: value } : s));
     };
 
-    const handleAddNew = () => {
+    const handleAddNew = (newStakeholderData) => {
         const newStakeholder = {
             id: Date.now(),
-            nickname: 'New Stakeholder',
-            basePersona: 'CEO',
-            guidance: 'Add behavioral guidance here...'
+            nickname: newStakeholderData.nickname,
+            basePersona: newStakeholderData.basePersona,
+            guidance: 'Add behavioral guidance here...' // Add default guidance
         };
         setStakeholders(prev => [...prev, newStakeholder]);
+        setShowAddModal(false);
         setExpandedId(newStakeholder.id);
     };
     
@@ -1141,7 +1139,7 @@ const StakeholderSettings = () => {
         <div>
             <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-bold text-[#003E7C]">Stakeholders</h3>
-                <button onClick={handleAddNew} className="bg-[#0063C6] text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-[#003E7C]">Add New</button>
+                <button onClick={() => setShowAddModal(true)} className="bg-[#0063C6] text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-[#003E7C]">Add New</button>
             </div>
             <div className="space-y-4">
                 {stakeholders.map(stakeholder => (
@@ -1196,6 +1194,70 @@ const StakeholderSettings = () => {
                         )}
                     </div>
                 ))}
+            </div>
+            {showAddModal && <AddStakeholderModal basePersonas={basePersonas} onClose={() => setShowAddModal(false)} onAdd={handleAddNew} />}
+        </div>
+    );
+};
+
+const AddStakeholderModal = ({ basePersonas, onClose, onAdd }) => {
+    const [nickname, setNickname] = useState('');
+    const [basePersona, setBasePersona] = useState(basePersonas[0]);
+    const modalRef = useRef();
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (modalRef.current && !modalRef.current.contains(event.target)) {
+                onClose();
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [onClose]);
+
+    const handleCreate = () => {
+        if (nickname.trim()) {
+            onAdd({
+                nickname,
+                basePersona,
+            });
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+            <div ref={modalRef} className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold text-[#003E7C]">Create New Stakeholder</h3>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
+                </div>
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Nickname</label>
+                        <input 
+                            type="text"
+                            value={nickname}
+                            onChange={(e) => setNickname(e.target.value)}
+                            placeholder="e.g., Head of Product"
+                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#0063C6] focus:border-[#0063C6] sm:text-sm p-2 border"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Base DekaBridge Persona</label>
+                        <select
+                            value={basePersona}
+                            onChange={(e) => setBasePersona(e.target.value)}
+                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#0063C6] focus:border-[#0063C6] sm:text-sm p-2 border bg-white"
+                        >
+                            {basePersonas.map(persona => (
+                                <option key={persona} value={persona}>{persona}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+                <div className="mt-6 pt-4 border-t flex justify-end">
+                    <button onClick={handleCreate} className="bg-[#0063C6] text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-[#003E7C]">Create Stakeholder</button>
+                </div>
             </div>
         </div>
     );
