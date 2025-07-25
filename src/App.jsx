@@ -56,6 +56,7 @@ export default function App() {
   const [userName, setUserName] = useState('Skyler Place');
   const [settingsInitialTab, setSettingsInitialTab] = useState('Profile');
   const [highlightedNextStepId, setHighlightedNextStepId] = useState(null);
+  const [showOnboarding, setShowOnboarding] = useState(true);
 
   const [mainMessages, setMainMessages] = useState([
     { sender: 'DekaBridge Agent', text: 'Welcome to the evaluation roadmap. I am the DekaBridge Agent, your strategic AI. How can we begin defining the problem space today?', type: 'ai' },
@@ -218,7 +219,7 @@ export default function App() {
     setActiveEvaluationId(null);
   };
 
-  const renderActiveView = () => {
+const renderActiveView = () => {
     const handleNavigate = (page, initialTab = 'Profile') => {
       setActiveLeftNav(page);
       setSettingsInitialTab(initialTab);
@@ -235,6 +236,9 @@ export default function App() {
         onNavigateToImpact={() => handleNavigate('Impact')} 
         onStartNewEvaluation={handleStartNewEvaluation}
         onSelectEvaluation={handleSelectSpecificEvaluation}
+        showOnboarding={showOnboarding}
+        setShowOnboarding={setShowOnboarding}
+        onNavigate={handleNavigate}
       />;
     }
     if (activeLeftNav === 'Evaluations') {
@@ -792,8 +796,7 @@ const AutosizeTextarea = (props) => {
     );
 };
 // --- WELCOME SCREEN COMPONENT ---
-const WelcomeScreen = ({ userName, onNavigateToEvaluations, onNavigateToProjects, onNavigateToImpact, onStartNewEvaluation, evaluations, projects, nextSteps, onSelectEvaluation }) => {
-  const assignedEvaluations = projects.flatMap(p => 
+const WelcomeScreen = ({ userName, onNavigateToEvaluations, onNavigateToProjects, onNavigateToImpact, onStartNewEvaluation, evaluations, projects, nextSteps, onSelectEvaluation, showOnboarding, setShowOnboarding, onNavigate }) => {  const assignedEvaluations = projects.flatMap(p => 
     p.evaluationIds.map(evalId => {
         const evaluation = evaluations.find(e => e.id === evalId);
         return { ...evaluation, projectName: p.name };
@@ -807,6 +810,16 @@ const WelcomeScreen = ({ userName, onNavigateToEvaluations, onNavigateToProjects
           <h2 className="text-4xl font-bold tracking-tight text-[#003E7C] sm:text-5xl">Welcome back, {userName.split(' ')[0]}.</h2>
           <p className="mt-2 text-lg text-gray-600">Let's make some smart, fast, and objective decisions today.</p>
         </div>
+
+        {showOnboarding && (
+            <div className="mb-16">
+                <OnboardingCard 
+                    onNavigate={onNavigate} 
+                    onComplete={() => setShowOnboarding(false)}
+                    onStartEvaluation={() => onStartNewEvaluation('Roadmap Planning', 'blue')}
+                />
+            </div>
+        )}
 
         <WelcomeSection title="Start a new Evaluation">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
@@ -1506,7 +1519,56 @@ const StakeholderSettings = () => {
         </div>
     );
 };
+const OnboardingCard = ({ onNavigate, onComplete, onStartEvaluation }) => {
+    const [completedSteps, setCompletedSteps] = useState([]);
 
+    const toggleStep = (step) => {
+        setCompletedSteps(prev => 
+            prev.includes(step) ? prev.filter(s => s !== step) : [...prev, step]
+        );
+    };
+
+    const steps = [
+        { id: 'profile', title: 'Create Profile', description: 'Add your name and role for a personalized experience.', link: () => onNavigate('Settings', 'Profile') },
+        { id: 'integrations', title: 'Link Integrations', description: 'Connect to services like Jira, Salesforce, and Zendesk.', link: () => onNavigate('Settings', 'Integrations') },
+        { id: 'files', title: 'Upload Strategy Files', description: 'Provide context by uploading relevant documents.', link: () => onNavigate('Settings', 'Files') },
+        { id: 'evaluation', title: 'First Evaluation', description: 'Start your first evaluation to see how it works.', link: onStartEvaluation },
+        { id: 'stakeholders', title: 'Get Stakeholder Alignment', description: 'Define stakeholders for realistic simulations.', link: () => onNavigate('Settings', 'Stakeholders') },
+    ];
+
+    return (
+        <div className="bg-white p-6 rounded-xl border border-gray-200/80 shadow-sm">
+            <h3 className="text-xl font-semibold text-[#003E7C]">Getting Started</h3>
+            <p className="text-sm text-gray-500 mt-1">Complete these steps to get the most out of DekaBridge.</p>
+            <div className="mt-6 space-y-4">
+                {steps.map(step => {
+                    const isCompleted = completedSteps.includes(step.id);
+                    return (
+                        <div key={step.id} className="flex items-start gap-3">
+                            <input 
+                                type="checkbox"
+                                checked={isCompleted}
+                                onChange={() => toggleStep(step.id)}
+                                className="h-5 w-5 rounded border-gray-300 text-[#0063C6] focus:ring-[#0063C6] mt-0.5"
+                            />
+                            <div>
+                                <button onClick={step.link} className={`text-left font-medium ${isCompleted ? 'text-gray-500 line-through' : 'text-gray-800 hover:text-[#0063C6]'}`}>
+                                    {step.title}
+                                </button>
+                                <p className={`text-sm ${isCompleted ? 'text-gray-400' : 'text-gray-500'}`}>{step.description}</p>
+                            </div>
+                        </div>
+                    )
+                })}
+            </div>
+            <div className="mt-6 border-t pt-4 text-right">
+                <button onClick={onComplete} className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-300">
+                    Complete Onboarding
+                </button>
+            </div>
+        </div>
+    );
+};
 const AddStakeholderModal = ({ basePersonas, onClose, onAdd }) => {
     const [nickname, setNickname] = useState('');
     const [basePersona, setBasePersona] = useState(basePersonas[0]);
