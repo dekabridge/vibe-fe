@@ -531,17 +531,6 @@ const PersonaButton = ({ name, onSelect, isSelected, disabled }) => (
 const NextStepsView = ({ steps, onUpdate, onDelete, onAdd }) => {
     const statusOptions = ['Not Started', 'In Progress', 'Completed'];
 
-    // Ref for the textarea to handle auto-sizing
-    const textAreaRef = useRef(null);
-
-    useEffect(() => {
-        if (textAreaRef.current) {
-            textAreaRef.current.style.height = 'auto';
-            textAreaRef.current.style.height = `${textAreaRef.current.scrollHeight}px`;
-        }
-    }, [steps]);
-
-
     return (
         <div className="space-y-4">
             <div className="flex justify-between items-center">
@@ -552,8 +541,8 @@ const NextStepsView = ({ steps, onUpdate, onDelete, onAdd }) => {
                 <table className="w-full text-left table-fixed">
                     <thead className="border-b border-gray-200/80">
                         <tr>
-                            <th className="p-4 text-sm font-semibold text-gray-500 w-1/2">Action</th>
-                            <th className="p-4 text-sm font-semibold text-gray-500">Due Date</th>
+                            <th className="p-4 text-sm font-semibold text-gray-500 w-[55%]">Action</th>
+                            <th className="p-4 text-sm font-semibold text-gray-500 w-[20%]">Due Date</th>
                             <th className="p-4 text-sm font-semibold text-gray-500">Status</th>
                             <th className="p-4 text-sm font-semibold text-gray-500 w-12"></th>
                         </tr>
@@ -562,16 +551,11 @@ const NextStepsView = ({ steps, onUpdate, onDelete, onAdd }) => {
                         {steps.map(step => (
                             <tr key={step.id} className="border-b border-gray-200/80 last:border-b-0">
                                 <td className="p-2 align-top">
-                                    <textarea 
-                                        ref={textAreaRef}
+                                    <AutosizeTextarea 
                                         value={step.action}
                                         onChange={(e) => onUpdate(step.id, 'action', e.target.value)}
                                         rows={1}
-                                        className="w-full bg-transparent p-2 border border-transparent rounded-md focus:bg-white focus:border-gray-300 focus:outline-none resize-none overflow-hidden"
-                                        onInput={(e) => {
-                                            e.target.style.height = 'auto';
-                                            e.target.style.height = `${e.target.scrollHeight}px`;
-                                        }}
+                                        className="w-full bg-transparent p-2 border border-transparent rounded-md focus:bg-white focus:border-gray-300 focus:outline-none resize-none text-xs"
                                     />
                                 </td>
                                 <td className="p-2 align-top">
@@ -579,14 +563,14 @@ const NextStepsView = ({ steps, onUpdate, onDelete, onAdd }) => {
                                         type="date"
                                         value={step.due}
                                         onChange={(e) => onUpdate(step.id, 'due', e.target.value)}
-                                        className="w-full bg-transparent p-2 border border-transparent rounded-md focus:bg-white focus:border-gray-300 focus:outline-none"
+                                        className="w-full bg-transparent p-2 border border-transparent rounded-md focus:bg-white focus:border-gray-300 focus:outline-none text-xs"
                                     />
                                 </td>
                                 <td className="p-2 align-top">
                                     <select 
                                         value={step.status} 
                                         onChange={(e) => onUpdate(step.id, 'status', e.target.value)}
-                                        className="w-full bg-transparent p-2 border border-transparent rounded-md focus:bg-white focus:border-gray-300 focus:outline-none"
+                                        className="w-full bg-transparent p-2 border border-transparent rounded-md focus:bg-white focus:border-gray-300 focus:outline-none text-xs"
                                     >
                                         {statusOptions.map(option => <option key={option} value={option}>{option}</option>)}
                                     </select>
@@ -662,7 +646,24 @@ const EditableTitle = ({ initialValue, onSave, tag: Tag = 'h1', textClasses }) =
   );
 };
 
+const AutosizeTextarea = (props) => {
+    const textareaRef = useRef(null);
 
+    useEffect(() => {
+        if (textareaRef.current) {
+            textareaRef.current.style.height = '0px'; // Reset height to recalculate
+            const scrollHeight = textareaRef.current.scrollHeight;
+            textareaRef.current.style.height = `${scrollHeight}px`;
+        }
+    }, [props.value]); // Rerun this effect whenever the text value changes
+
+    return (
+        <textarea
+            ref={textareaRef}
+            {...props}
+        />
+    );
+};
 // --- WELCOME SCREEN COMPONENT ---
 // --- WELCOME SCREEN COMPONENT ---
 const WelcomeScreen = ({ userName, onNavigateToEvaluations, onNavigateToProjects, onNavigateToImpact, onStartNewEvaluation, evaluations, projects, onSelectEvaluation }) => {
