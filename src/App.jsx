@@ -120,7 +120,8 @@ export default function App() {
     setActiveEvaluationId(newEvaluation.id);
   };
   
-  const handleSelectSpecificEvaluation = (id) => {
+const handleSelectSpecificEvaluation = (id, initialTab = 'proposal') => {
+    setActiveRightTab(initialTab);
     setActiveEvaluationId(id);
     setActiveLeftNav('Evaluations');
   }
@@ -588,7 +589,9 @@ const EditableTitle = ({ initialValue, onSave, tag: Tag = 'h1', textClasses }) =
 
 
 // --- WELCOME SCREEN COMPONENT ---
-const WelcomeScreen = ({ userName, onNavigateToEvaluations, onNavigateToProjects, onNavigateToImpact, onStartNewEvaluation, evaluations, projects, onSelectEvaluation }) => {  const assignedEvaluations = projects.flatMap(p => 
+// --- WELCOME SCREEN COMPONENT ---
+const WelcomeScreen = ({ userName, onNavigateToEvaluations, onNavigateToProjects, onNavigateToImpact, onStartNewEvaluation, evaluations, projects, onSelectEvaluation }) => {
+  const assignedEvaluations = projects.flatMap(p => 
     p.evaluationIds.map(evalId => {
         const evaluation = evaluations.find(e => e.id === evalId);
         return { ...evaluation, projectName: p.name };
@@ -599,7 +602,8 @@ const WelcomeScreen = ({ userName, onNavigateToEvaluations, onNavigateToProjects
     <div className="flex-grow overflow-y-auto">
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="mb-12">
-            <h2 className="text-4xl font-bold tracking-tight text-[#003E7C] sm:text-5xl">Welcome back, {userName.split(' ')[0]}.</h2>          <p className="mt-2 text-lg text-gray-600">Let's make some smart, fast, and objective decisions today.</p>
+          <h2 className="text-4xl font-bold tracking-tight text-[#003E7C] sm:text-5xl">Welcome back, {userName.split(' ')[0]}.</h2>
+          <p className="mt-2 text-lg text-gray-600">Let's make some smart, fast, and objective decisions today.</p>
         </div>
 
         <WelcomeSection title="Start a new Evaluation">
@@ -624,7 +628,7 @@ const WelcomeScreen = ({ userName, onNavigateToEvaluations, onNavigateToProjects
                     simulations={ev.simulations}
                     nextStep={ev.nextStep}
                     color={ev.color}
-                    onSelect={() => onSelectEvaluation(ev.id)}
+                    onSelect={(initialTab) => onSelectEvaluation(ev.id, initialTab)}
                 />
             ))}
           </div>
@@ -679,7 +683,7 @@ const ResumeCard = ({ type, title, projectName, lastUpdated, simulations, nextSt
     };
     return (
         <div className="bg-white p-4 rounded-xl border border-gray-200/80 flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4">
-            <div className="flex-grow cursor-pointer" onClick={onSelect}>
+            <div className="flex-grow cursor-pointer" onClick={() => onSelect()}>
                  <div className="flex items-center gap-3 mb-2 flex-wrap">
                     {onUpdateName ? (
                         <EditableTitle 
@@ -696,9 +700,9 @@ const ResumeCard = ({ type, title, projectName, lastUpdated, simulations, nextSt
                 </div>
                 <div className="text-sm text-gray-500 flex items-center gap-4 flex-wrap">
                     <span>Last updated: {lastUpdated}</span>
-                    <a href="#" onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5 text-[#0063C6] hover:underline">
+                    <button onClick={(e) => { e.stopPropagation(); onSelect('proposal'); }} className="flex items-center gap-1.5 text-[#0063C6] hover:underline">
                         <FileText size={14} /> Proposal
-                    </a>
+                    </button>
                     <span className="flex items-center gap-1.5">
                         <Users size={14} className="text-gray-400" /> Simulations: {simulations}
                     </span>
@@ -715,10 +719,10 @@ const ResumeCard = ({ type, title, projectName, lastUpdated, simulations, nextSt
                         </button>
                     </>
                 ) : (
-                    <div className="text-left">
+                    <button onClick={(e) => { e.stopPropagation(); onSelect('nextSteps'); }} className="text-left w-full">
                         <h5 className="text-sm font-semibold text-gray-700">Next Step</h5>
-                        <p className="text-sm text-gray-600 mt-1">{nextStep.action} <span className="text-gray-400">({nextStep.owner} - {nextStep.due})</span></p>
-                    </div>
+                        <p className="text-sm text-gray-600 mt-1 hover:text-[#0063C6]">{nextStep.action} <span className="text-gray-400">({nextStep.owner} - {nextStep.due})</span></p>
+                    </button>
                 )}
             </div>
         </div>
@@ -785,7 +789,7 @@ const EvaluationsPage = ({ evaluations, onSelectEvaluation, onDelete, onAssignRe
                     simulations={ev.simulations}
                     nextStep={ev.nextStep}
                     color={ev.color}
-                    onSelect={() => onSelectEvaluation(ev.id)}
+                    onSelect={(initialTab) => onSelectEvaluation(ev.id, initialTab)}
                     onDelete={(e) => { e.stopPropagation(); onDelete(ev.id); }}
                     onAssign={(e) => { e.stopPropagation(); onAssignRequest(ev.id); }}
                     onUpdateName={(newName) => onUpdateName(ev.id, newName)}
@@ -862,7 +866,7 @@ const ProjectsPage = ({ projects, allEvaluations, onUpdateProjectName, onCreateN
                                                 simulations={ev.simulations}
                                                 nextStep={ev.nextStep}
                                                 color={ev.color}
-                                                onSelect={() => onSelectEvaluation(ev.id)}
+                                                onSelect={(initialTab) => onSelectEvaluation(ev.id, initialTab)}
                                             />
                                         ))
                                     ) : (
